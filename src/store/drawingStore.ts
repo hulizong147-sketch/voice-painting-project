@@ -6,6 +6,8 @@ interface DrawingStore extends DrawingContextState {
   setStrokeWidth: (width: number) => void;
   setSelectedCount: (selectedCount: number) => void;
   setShowGrid: (showGrid: boolean) => void;
+  setSnapEnabled: (snapEnabled: boolean) => void;
+  setZoom: (zoom: number) => void;
   setFreeDrawing: (freeDrawing: boolean) => void;
   setListening: (isListening: boolean) => void;
   setTranscript: (transcript: string) => void;
@@ -19,6 +21,8 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   currentStrokeWidth: 3,
   selectedCount: 0,
   showGrid: true,
+  snapEnabled: false,
+  zoom: 1,
   freeDrawing: false,
   isListening: false,
   transcript: '',
@@ -28,6 +32,8 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   setStrokeWidth: (width) => set({ currentStrokeWidth: width }),
   setSelectedCount: (selectedCount) => set({ selectedCount }),
   setShowGrid: (showGrid) => set({ showGrid }),
+  setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
+  setZoom: (zoom) => set({ zoom }),
   setFreeDrawing: (freeDrawing) => set({ freeDrawing }),
   setListening: (isListening) => set({ isListening }),
   setTranscript: (transcript) => set({ transcript }),

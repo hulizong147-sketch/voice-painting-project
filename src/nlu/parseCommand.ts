@@ -132,6 +132,33 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/隐藏网格|关闭网格/.test(text)) {
     return { intent: 'toggle_grid', enabled: false };
   }
+  if (/开启吸附|打开吸附/.test(text)) {
+    return { intent: 'toggle_snap', enabled: true };
+  }
+  if (/关闭吸附|取消吸附/.test(text)) {
+    return { intent: 'toggle_snap', enabled: false };
+  }
+  if (/适应屏幕|适合屏幕|重置视图|原始大小/.test(text)) {
+    return { intent: 'fit_canvas' };
+  }
+  if (/画布/.test(text) && /放大|缩放大/.test(text)) {
+    return { intent: 'zoom_canvas', factor: 1.2 };
+  }
+  if (/画布/.test(text) && /缩小|缩放小/.test(text)) {
+    return { intent: 'zoom_canvas', factor: 0.8 };
+  }
+  if (/画布/.test(text) && /左/.test(text)) {
+    return { intent: 'pan_canvas', dx: -80, dy: 0 };
+  }
+  if (/画布/.test(text) && /右/.test(text)) {
+    return { intent: 'pan_canvas', dx: 80, dy: 0 };
+  }
+  if (/画布/.test(text) && /上/.test(text)) {
+    return { intent: 'pan_canvas', dx: 0, dy: -80 };
+  }
+  if (/画布/.test(text) && /下/.test(text)) {
+    return { intent: 'pan_canvas', dx: 0, dy: 80 };
+  }
   if (/上移一层|放到上面|置顶/.test(text)) {
     return { intent: 'bring_forward' };
   }
