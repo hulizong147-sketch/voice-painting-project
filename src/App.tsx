@@ -7,7 +7,9 @@ import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 
 export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
+  const currentStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
+  const currentOpacity = useDrawingStore((state) => state.currentOpacity);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
   const showGrid = useDrawingStore((state) => state.showGrid);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
@@ -122,7 +124,12 @@ export function App() {
             <span style={{ background: currentColor }} />
             当前颜色
           </span>
+          <span className="color-pill">
+            <span style={{ background: currentStrokeColor }} />
+            描边
+          </span>
           <span>画笔 {currentStrokeWidth}px</span>
+          <span>透明度 {Math.round(currentOpacity * 100)}%</span>
           <span>选中 {selectedCount}</span>
           <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
           <span>{showGrid ? '网格开' : '网格关'}</span>

@@ -63,6 +63,21 @@ function findTargetPosition(text: string) {
   return undefined;
 }
 
+function findOpacity(text: string) {
+  if (/不透明/.test(text)) {
+    return 1;
+  }
+  if (/半透明/.test(text)) {
+    return 0.5;
+  }
+  const percent = text.match(/(\d+(?:\.\d+)?)\s*%?/);
+  if (!percent) {
+    return undefined;
+  }
+  const value = Number(percent[1]);
+  return value > 1 ? value / 100 : value;
+}
+
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
   if (!text) {
@@ -250,6 +265,13 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
 
   const color = findColor(text);
+  const opacity = findOpacity(text);
+  if (/透明度|透明|不透明/.test(text) && opacity !== undefined) {
+    return { intent: 'set_opacity', opacity };
+  }
+  if (color && /描边|边框|轮廓|线条/.test(text) && /换成|改成|设为|设置|用|颜色/.test(text)) {
+    return { intent: 'set_stroke_color', color };
+  }
   const shape = findShape(text);
   if (/所有|全部|批量/.test(text) && /改成|变成|换成/.test(text)) {
     const [beforeText = '', afterText = ''] = text.split(/改成|变成|换成/);

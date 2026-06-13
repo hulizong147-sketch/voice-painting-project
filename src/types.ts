@@ -11,7 +11,9 @@ export type DrawingCommand =
       y?: number;
     }
   | { intent: 'set_color'; color: string }
+  | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }
+  | { intent: 'set_opacity'; opacity: number }
   | { intent: 'select_all' }
   | {
       intent: 'select_by_description';
@@ -82,6 +84,7 @@ export interface DrawingContextState {
   currentColor: string;
   currentStrokeColor: string;
   currentStrokeWidth: number;
+  currentOpacity: number;
   selectedCount: number;
   showGrid: boolean;
   snapEnabled: boolean;

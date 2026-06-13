@@ -3,7 +3,9 @@ import type { CommandHistoryItem, DrawingContextState } from '../types';
 
 interface DrawingStore extends DrawingContextState {
   setColor: (color: string) => void;
+  setStrokeColor: (color: string) => void;
   setStrokeWidth: (width: number) => void;
+  setOpacity: (opacity: number) => void;
   setSelectedCount: (selectedCount: number) => void;
   setShowGrid: (showGrid: boolean) => void;
   setSnapEnabled: (snapEnabled: boolean) => void;
@@ -21,6 +23,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   currentColor: '#cf5f45',
   currentStrokeColor: '#172018',
   currentStrokeWidth: 3,
+  currentOpacity: 1,
   selectedCount: 0,
   showGrid: true,
   snapEnabled: false,
@@ -33,7 +36,9 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   feedback: '准备就绪，说一句“画一个红色的圆”。',
   commands: [],
   setColor: (color) => set({ currentColor: color }),
+  setStrokeColor: (color) => set({ currentStrokeColor: color }),
   setStrokeWidth: (width) => set({ currentStrokeWidth: width }),
+  setOpacity: (opacity) => set({ currentOpacity: opacity }),
   setSelectedCount: (selectedCount) => set({ selectedCount }),
   setShowGrid: (showGrid) => set({ showGrid }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
