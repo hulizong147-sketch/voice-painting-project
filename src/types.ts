@@ -28,6 +28,7 @@ export type DrawingCommand =
       x?: number;
       y?: number;
     }
+  | { intent: 'update_text_selected'; text: string }
   | { intent: 'set_color'; color: string }
   | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }

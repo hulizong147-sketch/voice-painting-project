@@ -110,6 +110,15 @@ function findTextContent(rawText: string) {
   return match?.[1]?.trim();
 }
 
+function findUpdatedTextContent(rawText: string) {
+  const quoted = rawText.match(/[“"'](.+?)[”"']/);
+  if (quoted?.[1]) {
+    return quoted[1].trim();
+  }
+  const match = rawText.match(/(?:把)?(?:选中)?(?:文字|文本|标题|标签)?(?:内容)?(?:改成|改为|修改为|替换为|换成|设为)[:：]?\s*(.+)$/);
+  return match?.[1]?.trim();
+}
+
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
   if (!text) {
@@ -326,6 +335,13 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     return { intent: 'set_stroke_color', color };
   }
   const shape = findShape(text);
+  const updatedTextContent = findUpdatedTextContent(rawText);
+  if (updatedTextContent && /文字|文本|标题|标签|内容|改成|改为|修改为|替换为|换成/.test(text)) {
+    return {
+      intent: 'update_text_selected',
+      text: updatedTextContent,
+    };
+  }
   const textContent = findTextContent(rawText);
   if (textContent && /写|写上|添加|加上|输入|放上|文字|文本|标题|标签/.test(text)) {
     return {
