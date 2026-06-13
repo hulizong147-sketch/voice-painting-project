@@ -345,6 +345,12 @@ h1 {
   opacity: 0.45;
 }
 
+.command-list-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .empty-copy {
   color: var(--ink-muted);
   font-size: 14px;

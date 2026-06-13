@@ -65,6 +65,15 @@ export function App() {
     [handleCommand, setFeedback],
   );
 
+  const exportCommandHistory = useCallback(() => {
+    const blob = new Blob([JSON.stringify(commands, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.download = `voicedraw-command-history-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, [commands]);
+
   const speech = useSpeechRecognition((text) => {
     void runTextCommand(text);
   });
@@ -217,9 +226,14 @@ export function App() {
           <div className="command-list">
             <div className="command-list-header">
               <h2>命令历史</h2>
-              <button type="button" onClick={clearCommands} disabled={commands.length === 0}>
-                清空
-              </button>
+              <div className="command-list-actions">
+                <button type="button" onClick={exportCommandHistory} disabled={commands.length === 0}>
+                  导出
+                </button>
+                <button type="button" onClick={clearCommands} disabled={commands.length === 0}>
+                  清空
+                </button>
+              </div>
             </div>
             {commands.length === 0 ? (
               <p className="empty-copy">还没有命令。</p>
