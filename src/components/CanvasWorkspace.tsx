@@ -4,6 +4,7 @@ import {
   FileJson,
   FilePlus2,
   FileUp,
+  FolderOpen,
   Grid2X2,
   Mic,
   MicOff,
@@ -147,6 +148,14 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'save_json' }, '保存 JSON')}
         >
           <FileJson size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="打开 JSON"
+          onClick={() => void runCommand({ intent: 'open_json' }, '打开 JSON')}
+        >
+          <FolderOpen size={18} />
         </button>
       </div>
       <div className={showGrid ? 'canvas-stage show-grid' : 'canvas-stage'}>

@@ -31,7 +31,7 @@ Open http://127.0.0.1:5173.
 - Grid visibility toggle and status display.
 - PNG export.
 - SVG export.
-- Canvas JSON save and restore.
+- Canvas JSON save and restore from voice commands and toolbar buttons.
 - New canvas command that resets the workspace and history.
 - Batch color updates by simple object filters.
 - Correction commands that revise the most recently touched objects.
