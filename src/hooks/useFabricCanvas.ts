@@ -14,6 +14,7 @@ import type { DrawingCommand, ShapeKind } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
 type CanvasSnapshot = ReturnType<Canvas['toObject']>;
+type CanvasJson = ReturnType<Canvas['toObject']>;
 type SemanticObject = FabricObject & {
   semanticShape?: ShapeKind;
   fill?: string;
@@ -189,6 +190,44 @@ function createBarChart(centerX: number, centerY: number) {
   );
 }
 
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function timestampedName(prefix: string, extension: string) {
+  return `${prefix}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${extension}`;
+}
+
+function readJsonFile(): Promise<CanvasJson | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          resolve(JSON.parse(String(reader.result)) as CanvasJson);
+        } catch {
+          resolve(null);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  });
+}
+
 export function useFabricCanvas() {
   const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
@@ -351,6 +390,34 @@ export function useFabricCanvas() {
         return '已旋转选中对象';
       }
 
+      if (command.intent === 'batch_update') {
+        const objects = canvas.getObjects().filter((object) => {
+          const semanticObject = object as SemanticObject;
+          const shapeMatches = !command.filter.shape || semanticObject.semanticShape === command.filter.shape;
+          const colorMatches =
+            !command.filter.color ||
+            String(semanticObject.fill).toLowerCase() === command.filter.color.toLowerCase();
+          return shapeMatches && colorMatches;
+        });
+        if (objects.length === 0) {
+          return '没有找到可批量修改的对象';
+        }
+        objects.forEach((object) => {
+          object.set({
+            fill: command.updates.color ?? object.fill,
+            stroke: command.updates.strokeColor ?? object.stroke,
+            strokeWidth: command.updates.strokeWidth ?? object.strokeWidth,
+          });
+          object.setCoords();
+        });
+        canvas.discardActiveObject();
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(objects.length);
+        pushHistory();
+        return `已批量修改 ${objects.length} 个对象`;
+      }
+
       if (command.intent === 'bring_forward') {
         canvas.getActiveObjects().forEach((object) => canvas.bringObjectForward(object));
         canvas.requestRenderAll();
@@ -457,10 +524,34 @@ export function useFabricCanvas() {
 
       if (command.intent === 'export_png') {
         const link = document.createElement('a');
-        link.download = `voicedraw-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+        link.download = timestampedName('voicedraw', 'png');
         link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
         link.click();
         return '已导出 PNG';
+      }
+
+      if (command.intent === 'export_svg') {
+        downloadTextFile(timestampedName('voicedraw', 'svg'), canvas.toSVG(), 'image/svg+xml');
+        return '已导出 SVG';
+      }
+
+      if (command.intent === 'save_json') {
+        downloadTextFile(
+          timestampedName('voicedraw', 'json'),
+          JSON.stringify(canvas.toObject(['id', 'semanticShape']), null, 2),
+          'application/json',
+        );
+        return '已保存 JSON';
+      }
+
+      if (command.intent === 'open_json') {
+        const json = await readJsonFile();
+        if (!json) {
+          return '没有打开有效的 JSON 文件';
+        }
+        await loadSnapshot(json);
+        pushHistory();
+        return '已打开 JSON 画布';
       }
 
       return command.reason;

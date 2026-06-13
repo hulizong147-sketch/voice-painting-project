@@ -90,6 +90,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
   }
+  if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
+    return { intent: 'export_svg' };
+  }
+  if (/JSON|工程|项目/.test(rawText) && /保存|下载/.test(text)) {
+    return { intent: 'save_json' };
+  }
+  if (/JSON|工程|项目/.test(rawText) && /打开|导入|恢复/.test(text)) {
+    return { intent: 'open_json' };
+  }
   if (/导出|保存.*PNG|保存图片|下载/.test(text)) {
     return { intent: 'export_png' };
   }
@@ -148,6 +157,23 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   const color = findColor(text);
   const shape = findShape(text);
+  if (/所有|全部|批量/.test(text) && /改成|变成|换成/.test(text)) {
+    const [beforeText = '', afterText = ''] = text.split(/改成|变成|换成/);
+    const beforeColor = findColor(beforeText);
+    const afterColor = findColor(afterText) ?? color;
+    if (afterColor) {
+      return {
+        intent: 'batch_update',
+        filter: {
+          shape,
+          color: beforeColor,
+        },
+        updates: {
+          color: afterColor,
+        },
+      };
+    }
+  }
   if (/选中|选择/.test(text) && (shape || color || /最左|最右|最上|最下|左边|右边|上面|下面/.test(text))) {
     return {
       intent: 'select_by_description',

@@ -1,5 +1,15 @@
 import { useEffect } from 'react';
-import { Download, Mic, MicOff, Redo2, RotateCcw, Shapes, Trash2 } from 'lucide-react';
+import {
+  Download,
+  FileJson,
+  FileUp,
+  Mic,
+  MicOff,
+  Redo2,
+  RotateCcw,
+  Shapes,
+  Trash2,
+} from 'lucide-react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import type { DrawingCommand } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
@@ -77,6 +87,22 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'export_png' }, '导出 PNG')}
         >
           <Download size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="导出 SVG"
+          onClick={() => void runCommand({ intent: 'export_svg' }, '导出 SVG')}
+        >
+          <FileUp size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="保存 JSON"
+          onClick={() => void runCommand({ intent: 'save_json' }, '保存 JSON')}
+        >
+          <FileJson size={18} />
         </button>
       </div>
       <div className={showGrid ? 'canvas-stage show-grid' : 'canvas-stage'}>

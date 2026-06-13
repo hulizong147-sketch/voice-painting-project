@@ -23,6 +23,18 @@ export type DrawingCommand =
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
+  | {
+      intent: 'batch_update';
+      filter: {
+        shape?: ShapeKind;
+        color?: string;
+      };
+      updates: {
+        color?: string;
+        strokeColor?: string;
+        strokeWidth?: number;
+      };
+    }
   | { intent: 'bring_forward' }
   | { intent: 'send_backward' }
   | { intent: 'set_free_drawing'; enabled: boolean }
@@ -32,6 +44,9 @@ export type DrawingCommand =
   | { intent: 'redo' }
   | { intent: 'clear_canvas' }
   | { intent: 'export_png' }
+  | { intent: 'export_svg' }
+  | { intent: 'save_json' }
+  | { intent: 'open_json' }
   | { intent: 'unknown'; reason: string };
 
 export interface CommandHistoryItem {
