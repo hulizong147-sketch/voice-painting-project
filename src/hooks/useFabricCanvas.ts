@@ -390,11 +390,14 @@ export function useFabricCanvas() {
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
   const setFreeDrawing = useDrawingStore((state) => state.setFreeDrawing);
+  const setOpacity = useDrawingStore((state) => state.setOpacity);
   const setSnapEnabled = useDrawingStore((state) => state.setSnapEnabled);
+  const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
   const setShowGrid = useDrawingStore((state) => state.setShowGrid);
   const setStrokeWidth = useDrawingStore((state) => state.setStrokeWidth);
   const setZoom = useDrawingStore((state) => state.setZoom);
   const storeColor = useDrawingStore((state) => state.currentColor);
+  const storeOpacity = useDrawingStore((state) => state.currentOpacity);
   const storeStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const storeStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
@@ -455,6 +458,21 @@ export function useFabricCanvas() {
         return '已切换当前颜色';
       }
 
+      if (command.intent === 'set_stroke_color') {
+        setStrokeColor(command.color);
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          activeObjects.forEach((object) => object.set({ stroke: command.color }));
+          canvas.requestRenderAll();
+          pushHistory();
+          return '已修改选中对象描边颜色';
+        }
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = command.color;
+        }
+        return '已切换当前描边颜色';
+      }
+
       if (command.intent === 'set_stroke_width') {
         const width = Math.max(1, Math.min(24, command.width));
         setStrokeWidth(width);
@@ -462,6 +480,19 @@ export function useFabricCanvas() {
         canvas.requestRenderAll();
         pushHistory();
         return `画笔粗细已设为 ${width}`;
+      }
+
+      if (command.intent === 'set_opacity') {
+        const opacity = Math.max(0.05, Math.min(1, command.opacity));
+        setOpacity(opacity);
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          activeObjects.forEach((object) => object.set({ opacity }));
+          canvas.requestRenderAll();
+          pushHistory();
+          return `已将选中对象透明度设为 ${Math.round(opacity * 100)}%`;
+        }
+        return `当前透明度已设为 ${Math.round(opacity * 100)}%`;
       }
 
       if (command.intent === 'select_all') {
@@ -753,7 +784,7 @@ export function useFabricCanvas() {
         if (!canvas.freeDrawingBrush) {
           canvas.freeDrawingBrush = new PencilBrush(canvas);
         }
-        canvas.freeDrawingBrush.color = storeColor;
+        canvas.freeDrawingBrush.color = storeStrokeColor;
         canvas.freeDrawingBrush.width = storeStrokeWidth;
         setFreeDrawing(command.enabled);
         return command.enabled ? '已开始自由绘制' : '已停止自由绘制';
@@ -813,7 +844,7 @@ export function useFabricCanvas() {
         if (!object) {
           return '暂不支持这个图形';
         }
-        object.set({ strokeWidth: storeStrokeWidth });
+        object.set({ opacity: storeOpacity, strokeWidth: storeStrokeWidth });
         canvas.add(object);
         canvas.setActiveObject(object);
         canvas.requestRenderAll();
@@ -920,11 +951,14 @@ export function useFabricCanvas() {
       loadSnapshot,
       pushHistory,
       setColor,
+      setOpacity,
       setSnapEnabled,
+      setStrokeColor,
       setStrokeWidth,
       setZoom,
       snapEnabled,
       storeColor,
+      storeOpacity,
       storeStrokeColor,
       storeStrokeWidth,
       showGrid,
