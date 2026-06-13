@@ -1,0 +1,38 @@
+export type ShapeKind = 'circle' | 'rect' | 'triangle' | 'line' | 'star';
+
+export type DrawingCommand =
+  | {
+      intent: 'draw_shape';
+      shape: ShapeKind;
+      color?: string;
+      strokeColor?: string;
+      size?: number;
+      x?: number;
+      y?: number;
+    }
+  | { intent: 'set_color'; color: string }
+  | { intent: 'set_stroke_width'; width: number }
+  | { intent: 'undo' }
+  | { intent: 'redo' }
+  | { intent: 'clear_canvas' }
+  | { intent: 'export_png' }
+  | { intent: 'unknown'; reason: string };
+
+export interface CommandHistoryItem {
+  id: string;
+  text: string;
+  result: string;
+  createdAt: number;
+  ok: boolean;
+}
+
+export interface DrawingContextState {
+  currentColor: string;
+  currentStrokeColor: string;
+  currentStrokeWidth: number;
+  selectedCount: number;
+  isListening: boolean;
+  transcript: string;
+  feedback: string;
+  commands: CommandHistoryItem[];
+}
