@@ -17,6 +17,7 @@ interface DrawingStore extends DrawingContextState {
   setTranscript: (transcript: string) => void;
   setFeedback: (feedback: string) => void;
   addCommand: (item: CommandHistoryItem) => void;
+  setCommands: (items: CommandHistoryItem[]) => void;
   clearCommands: () => void;
 }
 
@@ -52,5 +53,6 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   setFeedback: (feedback) => set({ feedback }),
   addCommand: (item) =>
     set((state) => ({ commands: [item, ...state.commands].slice(0, 24) })),
+  setCommands: (items) => set({ commands: items.slice(0, 24) }),
   clearCommands: () => set({ commands: [] }),
 }));

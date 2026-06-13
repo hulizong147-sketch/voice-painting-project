@@ -1,10 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RotateCw } from 'lucide-react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
-import type { DrawingCommand } from './types';
+import type { CommandHistoryItem, DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
 import { parseCommands } from './nlu/parseCommand';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
+
+const normalizeImportedCommands = (value: unknown): CommandHistoryItem[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .flatMap((item) => {
+      if (!item || typeof item !== 'object') {
+        return [];
+      }
+      const candidate = item as Partial<CommandHistoryItem>;
+      if (
+        typeof candidate.text === 'string' &&
+        typeof candidate.result === 'string' &&
+        typeof candidate.createdAt === 'number' &&
+        Number.isFinite(candidate.createdAt) &&
+        typeof candidate.ok === 'boolean'
+      ) {
+        return [{
+          id: typeof candidate.id === 'string' && candidate.id.length > 0 ? candidate.id : crypto.randomUUID(),
+          text: candidate.text,
+          result: candidate.result,
+          createdAt: candidate.createdAt,
+          ok: candidate.ok,
+        }];
+      }
+      return [];
+    })
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 24);
+};
 
 export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
@@ -26,6 +58,7 @@ export function App() {
   const setListeningMode = useDrawingStore((state) => state.setListeningMode);
   const setHelpVisible = useDrawingStore((state) => state.setHelpVisible);
   const addCommand = useDrawingStore((state) => state.addCommand);
+  const setCommands = useDrawingStore((state) => state.setCommands);
   const clearCommands = useDrawingStore((state) => state.clearCommands);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
   const [typedCommand, setTypedCommand] = useState('');
@@ -73,6 +106,32 @@ export function App() {
     link.click();
     URL.revokeObjectURL(link.href);
   }, [commands]);
+
+  const importCommandHistory = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(await file.text()) as unknown;
+        const nextCommands = normalizeImportedCommands(parsed);
+        if (nextCommands.length === 0) {
+          setFeedback('没有导入有效的命令历史');
+          return;
+        }
+        setCommands(nextCommands);
+        setFeedback(`已导入 ${nextCommands.length} 条命令历史`);
+      } catch {
+        setFeedback('命令历史文件不是有效的 JSON');
+      }
+    };
+    input.click();
+  }, [setCommands, setFeedback]);
 
   const speech = useSpeechRecognition((text) => {
     void runTextCommand(text);
@@ -227,6 +286,9 @@ export function App() {
             <div className="command-list-header">
               <h2>命令历史</h2>
               <div className="command-list-actions">
+                <button type="button" onClick={importCommandHistory}>
+                  导入
+                </button>
                 <button type="button" onClick={exportCommandHistory} disabled={commands.length === 0}>
                   导出
                 </button>
