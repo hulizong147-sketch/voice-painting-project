@@ -27,7 +27,7 @@ Open http://127.0.0.1:5173.
 - Relative drawing near the current selection.
 - Built-in smiley and bar chart templates with toolbar shortcuts.
 - Additional templates for flowcharts, suns, and houses.
-- Free drawing mode using Fabric PencilBrush.
+- Free drawing mode using Fabric PencilBrush with voice and toolbar toggles.
 - Grid visibility toggle from voice commands, toolbar controls, and status display.
 - PNG export.
 - SVG export.
