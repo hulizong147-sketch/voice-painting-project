@@ -78,6 +78,24 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
   }
+  if (/不是|不对|等一下|等等|改成|换成|修正/.test(text) && !/所有|全部|批量/.test(text)) {
+    const correctionColor = findColor(text);
+    if (correctionColor) {
+      return { intent: 'correct_last', updates: { color: correctionColor } };
+    }
+    if (/大一点|放大|变大/.test(text)) {
+      const factor = Number(text.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 1.25);
+      return { intent: 'correct_last', updates: { sizeFactor: factor } };
+    }
+    if (/小一点|缩小|变小/.test(text)) {
+      const factor = Number(text.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 1.25);
+      return { intent: 'correct_last', updates: { sizeFactor: 1 / factor } };
+    }
+    if (/旋转/.test(text)) {
+      const angle = Number(text.match(/-?\d+/)?.[0] ?? 45);
+      return { intent: 'correct_last', updates: { angle } };
+    }
+  }
   if (/笑脸|笑脸模板/.test(text)) {
     return { intent: 'draw_template', template: 'smiley' };
   }

@@ -30,6 +30,7 @@ Open http://127.0.0.1:5173.
 - SVG export.
 - Canvas JSON save and restore.
 - Batch color updates by simple object filters.
+- Correction commands that revise the most recently touched objects.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
@@ -49,6 +50,9 @@ Open http://127.0.0.1:5173.
 - 导出 SVG
 - 保存 JSON 工程
 - 打开 JSON 工程
+- 不对，改成深蓝色
+- 等一下，放大一点
+- 不是，旋转 30 度
 - 删除选中
 - 撤销
 - 重做
