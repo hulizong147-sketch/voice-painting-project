@@ -28,6 +28,7 @@ export type DrawingCommand =
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
+  | { intent: 'flip_selected'; axis: 'horizontal' | 'vertical' }
   | {
       intent: 'align_selected';
       alignment: 'left' | 'right' | 'top' | 'bottom' | 'center_horizontal' | 'center_vertical';

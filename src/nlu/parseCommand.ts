@@ -258,6 +258,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     const angle = Number(text.match(/-?\d+/)?.[0] ?? 45);
     return { intent: 'rotate_selected', angle };
   }
+  if (/水平翻转|左右翻转|横向翻转|镜像翻转/.test(text)) {
+    return { intent: 'flip_selected', axis: 'horizontal' };
+  }
+  if (/垂直翻转|上下翻转|纵向翻转/.test(text)) {
+    return { intent: 'flip_selected', axis: 'vertical' };
+  }
 
   const widthMatch = text.match(/(?:画笔|线条|描边).*(\d+)/);
   if (/粗|细|画笔|线条|描边/.test(text) && widthMatch) {
