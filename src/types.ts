@@ -12,6 +12,15 @@ export type DrawingCommand =
     }
   | { intent: 'set_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }
+  | { intent: 'select_all' }
+  | { intent: 'delete_selected' }
+  | { intent: 'move_selected'; dx: number; dy: number }
+  | { intent: 'scale_selected'; factor: number }
+  | { intent: 'rotate_selected'; angle: number }
+  | { intent: 'bring_forward' }
+  | { intent: 'send_backward' }
+  | { intent: 'set_free_drawing'; enabled: boolean }
+  | { intent: 'toggle_grid'; enabled?: boolean }
   | { intent: 'undo' }
   | { intent: 'redo' }
   | { intent: 'clear_canvas' }
@@ -31,6 +40,8 @@ export interface DrawingContextState {
   currentStrokeColor: string;
   currentStrokeWidth: number;
   selectedCount: number;
+  showGrid: boolean;
+  freeDrawing: boolean;
   isListening: boolean;
   transcript: string;
   feedback: string;

@@ -62,8 +62,61 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
   }
+  if (/删除选中|删掉选中|移除选中/.test(text)) {
+    return { intent: 'delete_selected' };
+  }
+  if (/全选|选中全部|选择全部/.test(text)) {
+    return { intent: 'select_all' };
+  }
   if (/导出|保存.*PNG|保存图片|下载/.test(text)) {
     return { intent: 'export_png' };
+  }
+  if (/开始画|自由画|自由绘制|涂鸦/.test(text)) {
+    return { intent: 'set_free_drawing', enabled: true };
+  }
+  if (/停笔|停止画|结束绘制|退出画笔/.test(text)) {
+    return { intent: 'set_free_drawing', enabled: false };
+  }
+  if (/显示网格|打开网格/.test(text)) {
+    return { intent: 'toggle_grid', enabled: true };
+  }
+  if (/隐藏网格|关闭网格/.test(text)) {
+    return { intent: 'toggle_grid', enabled: false };
+  }
+  if (/上移一层|放到上面|置顶/.test(text)) {
+    return { intent: 'bring_forward' };
+  }
+  if (/下移一层|放到底下|置底/.test(text)) {
+    return { intent: 'send_backward' };
+  }
+
+  const moveDistance = /一点|一些/.test(text) ? 40 : Number(text.match(/(\d+)/)?.[1] ?? 80);
+  if (/移动|挪|移/.test(text)) {
+    if (/左/.test(text)) {
+      return { intent: 'move_selected', dx: -moveDistance, dy: 0 };
+    }
+    if (/右/.test(text)) {
+      return { intent: 'move_selected', dx: moveDistance, dy: 0 };
+    }
+    if (/上/.test(text)) {
+      return { intent: 'move_selected', dx: 0, dy: -moveDistance };
+    }
+    if (/下/.test(text)) {
+      return { intent: 'move_selected', dx: 0, dy: moveDistance };
+    }
+  }
+
+  if (/放大|变大/.test(text)) {
+    const factor = Number(text.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 1.25);
+    return { intent: 'scale_selected', factor };
+  }
+  if (/缩小|变小/.test(text)) {
+    const factor = Number(text.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 1.25);
+    return { intent: 'scale_selected', factor: 1 / factor };
+  }
+  if (/旋转/.test(text)) {
+    const angle = Number(text.match(/-?\d+/)?.[0] ?? 45);
+    return { intent: 'rotate_selected', angle };
   }
 
   const widthMatch = text.match(/(?:画笔|线条|描边).*(\d+)/);

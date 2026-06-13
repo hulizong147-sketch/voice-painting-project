@@ -9,6 +9,8 @@ export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
+  const showGrid = useDrawingStore((state) => state.showGrid);
+  const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
   const transcript = useDrawingStore((state) => state.transcript);
   const feedback = useDrawingStore((state) => state.feedback);
@@ -68,6 +70,8 @@ export function App() {
           </span>
           <span>画笔 {currentStrokeWidth}px</span>
           <span>选中 {selectedCount}</span>
+          <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
+          <span>{showGrid ? '网格开' : '网格关'}</span>
         </div>
       </header>
       <section className="workspace">

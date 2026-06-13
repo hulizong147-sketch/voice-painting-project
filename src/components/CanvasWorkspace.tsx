@@ -17,6 +17,7 @@ export function CanvasWorkspace({
 }: CanvasWorkspaceProps) {
   const { canvasElementRef, executeCommand } = useFabricCanvas();
   const isListening = useDrawingStore((state) => state.isListening);
+  const showGrid = useDrawingStore((state) => state.showGrid);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
@@ -78,7 +79,7 @@ export function CanvasWorkspace({
           <Download size={18} />
         </button>
       </div>
-      <div className="canvas-stage">
+      <div className={showGrid ? 'canvas-stage show-grid' : 'canvas-stage'}>
         <canvas ref={canvasElementRef} aria-label="VoiceDraw canvas" />
       </div>
     </section>

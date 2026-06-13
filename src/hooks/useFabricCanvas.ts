@@ -4,6 +4,7 @@ import {
   Circle,
   FabricObject,
   Line,
+  PencilBrush,
   Polygon,
   Rect,
   Triangle,
@@ -101,10 +102,13 @@ export function useFabricCanvas() {
   const ignoreHistoryRef = useRef(false);
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
+  const setFreeDrawing = useDrawingStore((state) => state.setFreeDrawing);
+  const setShowGrid = useDrawingStore((state) => state.setShowGrid);
   const setStrokeWidth = useDrawingStore((state) => state.setStrokeWidth);
   const storeColor = useDrawingStore((state) => state.currentColor);
   const storeStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const storeStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
+  const showGrid = useDrawingStore((state) => state.showGrid);
 
   const pushHistory = useCallback(() => {
     const canvas = fabricCanvasRef.current;
@@ -155,6 +159,103 @@ export function useFabricCanvas() {
         canvas.requestRenderAll();
         pushHistory();
         return `画笔粗细已设为 ${width}`;
+      }
+
+      if (command.intent === 'select_all') {
+        canvas.discardActiveObject();
+        canvas.getObjects().forEach((object) => object.set({ active: true }));
+        canvas.requestRenderAll();
+        setSelectedCount(canvas.getObjects().length);
+        return '已选中全部对象';
+      }
+
+      if (command.intent === 'delete_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '没有选中的对象';
+        }
+        activeObjects.forEach((object) => canvas.remove(object));
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        setSelectedCount(0);
+        pushHistory();
+        return '已删除选中对象';
+      }
+
+      if (command.intent === 'move_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          object.set({
+            left: (object.left ?? 0) + command.dx,
+            top: (object.top ?? 0) + command.dy,
+          });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已移动选中对象';
+      }
+
+      if (command.intent === 'scale_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          object.scale((object.scaleX ?? 1) * command.factor);
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已缩放选中对象';
+      }
+
+      if (command.intent === 'rotate_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          object.rotate((object.angle ?? 0) + command.angle);
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已旋转选中对象';
+      }
+
+      if (command.intent === 'bring_forward') {
+        canvas.getActiveObjects().forEach((object) => canvas.bringObjectForward(object));
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已上移一层';
+      }
+
+      if (command.intent === 'send_backward') {
+        canvas.getActiveObjects().forEach((object) => canvas.sendObjectBackwards(object));
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已下移一层';
+      }
+
+      if (command.intent === 'set_free_drawing') {
+        canvas.isDrawingMode = command.enabled;
+        if (!canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush = new PencilBrush(canvas);
+        }
+        canvas.freeDrawingBrush.color = storeColor;
+        canvas.freeDrawingBrush.width = storeStrokeWidth;
+        setFreeDrawing(command.enabled);
+        return command.enabled ? '已开始自由绘制' : '已停止自由绘制';
+      }
+
+      if (command.intent === 'toggle_grid') {
+        const enabled = command.enabled ?? !showGrid;
+        setShowGrid(enabled);
+        return enabled ? '已显示网格' : '已隐藏网格';
       }
 
       if (command.intent === 'draw_shape') {
@@ -244,9 +345,12 @@ export function useFabricCanvas() {
 
     const resize = () => {
       const bounds = stage.getBoundingClientRect();
+      const style = window.getComputedStyle(stage);
+      const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       canvas.setDimensions({
-        width: Math.max(320, bounds.width),
-        height: Math.max(420, bounds.height),
+        width: Math.max(320, bounds.width - horizontalPadding),
+        height: Math.max(420, bounds.height - verticalPadding),
       });
       canvas.requestRenderAll();
     };
@@ -261,6 +365,7 @@ export function useFabricCanvas() {
     canvas.on('selection:updated', updateSelection);
     canvas.on('selection:cleared', updateSelection);
     canvas.on('object:modified', pushHistory);
+    canvas.on('path:created', pushHistory);
 
     return () => {
       observer.disconnect();
