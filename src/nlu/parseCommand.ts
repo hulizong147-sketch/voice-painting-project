@@ -203,6 +203,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/锁定|锁住|固定/.test(text)) {
     return { intent: 'lock_selected', locked: true };
   }
+  if (/显示全部对象|显示所有对象|显示隐藏对象|显示所有图形|显示全部图形/.test(text)) {
+    return { intent: 'show_all_objects' };
+  }
+  if (/隐藏选中|隐藏当前|隐藏这个|隐藏对象|隐藏图形/.test(text)) {
+    return { intent: 'set_visibility_selected', visible: false };
+  }
+  if (/显示选中|显示当前|显示这个/.test(text)) {
+    return { intent: 'set_visibility_selected', visible: true };
+  }
   if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
     return { intent: 'export_svg' };
   }
