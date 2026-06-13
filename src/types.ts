@@ -37,6 +37,7 @@ export type DrawingCommand =
   | { intent: 'set_opacity'; opacity: number }
   | { intent: 'set_canvas_background'; color: string }
   | { intent: 'select_all' }
+  | { intent: 'clear_selection' }
   | { intent: 'invert_selection' }
   | { intent: 'select_by_visibility'; visible: boolean }
   | {

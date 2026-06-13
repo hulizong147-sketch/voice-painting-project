@@ -182,6 +182,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/反选|选择反向|反向选择/.test(text)) {
     return { intent: 'invert_selection' };
   }
+  if (/取消选择|取消选中|清除选择|清空选择|放下选中/.test(text)) {
+    return { intent: 'clear_selection' };
+  }
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
   }
