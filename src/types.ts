@@ -79,6 +79,7 @@ export interface DrawingContextState {
   zoom: number;
   freeDrawing: boolean;
   isListening: boolean;
+  listeningMode: 'continuous' | 'push_to_talk';
   transcript: string;
   feedback: string;
   commands: CommandHistoryItem[];

@@ -10,6 +10,7 @@ interface DrawingStore extends DrawingContextState {
   setZoom: (zoom: number) => void;
   setFreeDrawing: (freeDrawing: boolean) => void;
   setListening: (isListening: boolean) => void;
+  setListeningMode: (listeningMode: 'continuous' | 'push_to_talk') => void;
   setTranscript: (transcript: string) => void;
   setFeedback: (feedback: string) => void;
   addCommand: (item: CommandHistoryItem) => void;
@@ -25,6 +26,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   zoom: 1,
   freeDrawing: false,
   isListening: false,
+  listeningMode: 'continuous',
   transcript: '',
   feedback: '准备就绪，说一句“画一个红色的圆”。',
   commands: [],
@@ -36,6 +38,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   setZoom: (zoom) => set({ zoom }),
   setFreeDrawing: (freeDrawing) => set({ freeDrawing }),
   setListening: (isListening) => set({ isListening }),
+  setListeningMode: (listeningMode) => set({ listeningMode }),
   setTranscript: (transcript) => set({ transcript }),
   setFeedback: (feedback) => set({ feedback }),
   addCommand: (item) =>

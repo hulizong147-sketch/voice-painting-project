@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import type { DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
@@ -14,10 +14,12 @@ export function App() {
   const zoom = useDrawingStore((state) => state.zoom);
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
+  const listeningMode = useDrawingStore((state) => state.listeningMode);
   const transcript = useDrawingStore((state) => state.transcript);
   const feedback = useDrawingStore((state) => state.feedback);
   const commands = useDrawingStore((state) => state.commands);
   const setListening = useDrawingStore((state) => state.setListening);
+  const setListeningMode = useDrawingStore((state) => state.setListeningMode);
   const addCommand = useDrawingStore((state) => state.addCommand);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
   const [typedCommand, setTypedCommand] = useState('');
@@ -58,6 +60,51 @@ export function App() {
     void runTextCommand(text);
   });
 
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      speech.stop();
+    } else {
+      speech.start();
+    }
+    setListening(!isListening);
+  }, [isListening, setListening, speech]);
+
+  useEffect(() => {
+    if (listeningMode !== 'push_to_talk') {
+      return;
+    }
+
+    const isTypingTarget = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      return element?.tagName === 'INPUT' || element?.tagName === 'TEXTAREA';
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || event.repeat || isTypingTarget(event.target)) {
+        return;
+      }
+      event.preventDefault();
+      if (!useDrawingStore.getState().isListening) {
+        speech.start();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || isTypingTarget(event.target)) {
+        return;
+      }
+      event.preventDefault();
+      speech.stop();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [listeningMode, speech]);
+
   return (
     <main className="app-shell">
       <header className="top-bar">
@@ -84,14 +131,7 @@ export function App() {
           onExecutorReady={(execute) => {
             executeRef.current = execute;
           }}
-          onToggleListening={() => {
-            if (isListening) {
-              speech.stop();
-            } else {
-              speech.start();
-            }
-            setListening(!isListening);
-          }}
+          onToggleListening={toggleListening}
         />
         <aside className="side-panel">
           <div className={isListening ? 'listening-card active' : 'listening-card'}>
@@ -100,6 +140,28 @@ export function App() {
               <h2>{isListening ? '正在监听' : '监听待机'}</h2>
               <p>{transcript || feedback}</p>
             </div>
+          </div>
+          <div className="mode-toggle" aria-label="监听模式">
+            <button
+              className={listeningMode === 'continuous' ? 'active' : ''}
+              type="button"
+              onClick={() => setListeningMode('continuous')}
+            >
+              持续监听
+            </button>
+            <button
+              className={listeningMode === 'push_to_talk' ? 'active' : ''}
+              type="button"
+              onClick={() => {
+                if (isListening) {
+                  speech.stop();
+                }
+                setListeningMode('push_to_talk');
+                setFeedback('按住空格说话，松开停止。');
+              }}
+            >
+              按住说话
+            </button>
           </div>
           <form
             className="text-command"

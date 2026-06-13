@@ -73,10 +73,20 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
     };
     recognition.onerror = (event) => {
       setFeedback(`语音识别出错：${event.error}`);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        shouldListenRef.current = false;
+        setListening(false);
+      }
     };
     recognition.onend = () => {
       if (shouldListenRef.current) {
-        recognition.start();
+        try {
+          recognition.start();
+        } catch {
+          shouldListenRef.current = false;
+          setListening(false);
+          setFeedback('语音监听已停止，可重新开始。');
+        }
       } else {
         setListening(false);
       }
@@ -84,9 +94,15 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
 
     recognitionRef.current = recognition;
     shouldListenRef.current = true;
-    recognition.start();
-    setListening(true);
-    setFeedback('正在监听。');
+    try {
+      recognition.start();
+      setListening(true);
+      setFeedback('正在监听。');
+    } catch {
+      shouldListenRef.current = false;
+      setListening(false);
+      setFeedback('语音监听启动失败，可使用文本命令。');
+    }
   }, [onFinalText, setFeedback, setListening, setTranscript]);
 
   useEffect(() => {
