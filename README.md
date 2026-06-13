@@ -28,7 +28,7 @@ Open http://127.0.0.1:5173.
 - Built-in smiley and bar chart templates.
 - Additional templates for flowcharts, suns, and houses.
 - Free drawing mode using Fabric PencilBrush.
-- Grid visibility toggle and status display.
+- Grid visibility toggle from voice commands, toolbar controls, and status display.
 - PNG export.
 - SVG export.
 - Canvas JSON save and restore from voice commands and toolbar buttons.
