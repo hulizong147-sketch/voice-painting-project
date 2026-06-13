@@ -47,6 +47,22 @@ function findPosition(text: string) {
   return positionWords.find(([pattern]) => pattern.test(text))?.[1] ?? {};
 }
 
+function findTargetPosition(text: string) {
+  if (/最左|左边/.test(text)) {
+    return 'leftmost' as const;
+  }
+  if (/最右|右边/.test(text)) {
+    return 'rightmost' as const;
+  }
+  if (/最上|上面|顶部/.test(text)) {
+    return 'topmost' as const;
+  }
+  if (/最下|下面|底部/.test(text)) {
+    return 'bottommost' as const;
+  }
+  return undefined;
+}
+
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
   if (!text) {
@@ -62,11 +78,26 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
   }
+  if (/笑脸|笑脸模板/.test(text)) {
+    return { intent: 'draw_template', template: 'smiley' };
+  }
+  if (/柱状图|柱形图|条形图/.test(text)) {
+    return { intent: 'draw_template', template: 'bar_chart' };
+  }
   if (/删除选中|删掉选中|移除选中/.test(text)) {
     return { intent: 'delete_selected' };
   }
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
+  }
+  if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
+    return { intent: 'export_svg' };
+  }
+  if (/JSON|工程|项目/.test(rawText) && /保存|下载/.test(text)) {
+    return { intent: 'save_json' };
+  }
+  if (/JSON|工程|项目/.test(rawText) && /打开|导入|恢复/.test(text)) {
+    return { intent: 'open_json' };
   }
   if (/导出|保存.*PNG|保存图片|下载/.test(text)) {
     return { intent: 'export_png' };
@@ -126,6 +157,31 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   const color = findColor(text);
   const shape = findShape(text);
+  if (/所有|全部|批量/.test(text) && /改成|变成|换成/.test(text)) {
+    const [beforeText = '', afterText = ''] = text.split(/改成|变成|换成/);
+    const beforeColor = findColor(beforeText);
+    const afterColor = findColor(afterText) ?? color;
+    if (afterColor) {
+      return {
+        intent: 'batch_update',
+        filter: {
+          shape,
+          color: beforeColor,
+        },
+        updates: {
+          color: afterColor,
+        },
+      };
+    }
+  }
+  if (/选中|选择/.test(text) && (shape || color || /最左|最右|最上|最下|左边|右边|上面|下面/.test(text))) {
+    return {
+      intent: 'select_by_description',
+      shape,
+      color,
+      position: findTargetPosition(text),
+    };
+  }
   if (shape && /画|绘制|放|来个|生成/.test(text)) {
     return {
       intent: 'draw_shape',

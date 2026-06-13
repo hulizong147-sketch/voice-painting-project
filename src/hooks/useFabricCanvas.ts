@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import {
+  ActiveSelection,
   Canvas,
   Circle,
   FabricObject,
@@ -13,6 +14,11 @@ import type { DrawingCommand, ShapeKind } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
 type CanvasSnapshot = ReturnType<Canvas['toObject']>;
+type CanvasJson = ReturnType<Canvas['toObject']>;
+type SemanticObject = FabricObject & {
+  semanticShape?: ShapeKind;
+  fill?: string;
+};
 
 const defaultSizeByShape: Record<ShapeKind, number> = {
   circle: 120,
@@ -29,6 +35,11 @@ function makeId() {
 function withObjectId<T extends FabricObject>(object: T): T {
   object.set('id', makeId());
   return object;
+}
+
+function withSemanticShape<T extends FabricObject>(object: T, shape: ShapeKind): T {
+  object.set('semanticShape', shape);
+  return withObjectId(object);
 }
 
 function createStarPoints(radius: number) {
@@ -63,13 +74,16 @@ function createShape(command: Extract<DrawingCommand, { intent: 'draw_shape' }>)
 
   switch (command.shape) {
     case 'circle':
-      return withObjectId(new Circle({ ...shared, radius: size / 2 }));
+      return withSemanticShape(new Circle({ ...shared, radius: size / 2 }), 'circle');
     case 'rect':
-      return withObjectId(new Rect({ ...shared, width: size, height: size * 0.72, rx: 4, ry: 4 }));
+      return withSemanticShape(
+        new Rect({ ...shared, width: size, height: size * 0.72, rx: 4, ry: 4 }),
+        'rect',
+      );
     case 'triangle':
-      return withObjectId(new Triangle({ ...shared, width: size, height: size }));
+      return withSemanticShape(new Triangle({ ...shared, width: size, height: size }), 'triangle');
     case 'line':
-      return withObjectId(
+      return withSemanticShape(
         new Line([-size / 2, 0, size / 2, 0], {
           left,
           top,
@@ -78,9 +92,10 @@ function createShape(command: Extract<DrawingCommand, { intent: 'draw_shape' }>)
           originX: 'center',
           originY: 'center',
         }),
+        'line',
       );
     case 'star':
-      return withObjectId(
+      return withSemanticShape(
         new Polygon(createStarPoints(size / 2), {
           ...shared,
           left: left - size / 2,
@@ -88,10 +103,129 @@ function createShape(command: Extract<DrawingCommand, { intent: 'draw_shape' }>)
           originX: 'left',
           originY: 'top',
         }),
+        'star',
       );
     default:
       return null;
   }
+}
+
+function getObjectCenter(object: FabricObject) {
+  const center = object.getCenterPoint();
+  return { x: center.x, y: center.y };
+}
+
+function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {
+  if (!position || objects.length <= 1) {
+    return objects;
+  }
+  const sorted = [...objects].sort((a, b) => {
+    const aCenter = getObjectCenter(a);
+    const bCenter = getObjectCenter(b);
+    if (position === 'leftmost') {
+      return aCenter.x - bCenter.x;
+    }
+    if (position === 'rightmost') {
+      return bCenter.x - aCenter.x;
+    }
+    if (position === 'topmost') {
+      return aCenter.y - bCenter.y;
+    }
+    return bCenter.y - aCenter.y;
+  });
+  return [sorted[0]];
+}
+
+function createSmiley(centerX: number, centerY: number) {
+  const face = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY,
+      radius: 90,
+      fill: '#ffcc00',
+      stroke: '#172018',
+      strokeWidth: 4,
+      originX: 'center',
+      originY: 'center',
+    }),
+    'circle',
+  );
+  const eyeOptions = {
+    radius: 10,
+    fill: '#172018',
+    strokeWidth: 0,
+    originX: 'center' as const,
+    originY: 'center' as const,
+  };
+  const leftEye = withSemanticShape(new Circle({ ...eyeOptions, left: centerX - 34, top: centerY - 28 }), 'circle');
+  const rightEye = withSemanticShape(new Circle({ ...eyeOptions, left: centerX + 34, top: centerY - 28 }), 'circle');
+  const mouth = withSemanticShape(
+    new Line([centerX - 42, centerY + 36, centerX + 42, centerY + 36], {
+      stroke: '#172018',
+      strokeWidth: 8,
+      strokeLineCap: 'round',
+    }),
+    'line',
+  );
+  return [face, leftEye, rightEye, mouth];
+}
+
+function createBarChart(centerX: number, centerY: number) {
+  const heights = [80, 132, 104, 164];
+  return heights.map((height, index) =>
+    withSemanticShape(
+      new Rect({
+        left: centerX - 135 + index * 78,
+        top: centerY + 90 - height,
+        width: 48,
+        height,
+        fill: ['#0a84ff', '#34c759', '#ff9500', '#af52de'][index],
+        stroke: '#172018',
+        strokeWidth: 3,
+        rx: 4,
+        ry: 4,
+      }),
+      'rect',
+    ),
+  );
+}
+
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function timestampedName(prefix: string, extension: string) {
+  return `${prefix}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${extension}`;
+}
+
+function readJsonFile(): Promise<CanvasJson | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          resolve(JSON.parse(String(reader.result)) as CanvasJson);
+        } catch {
+          resolve(null);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  });
 }
 
 export function useFabricCanvas() {
@@ -115,7 +249,7 @@ export function useFabricCanvas() {
     if (!canvas || ignoreHistoryRef.current) {
       return;
     }
-    historyRef.current.push(canvas.toObject(['id']));
+    historyRef.current.push(canvas.toObject(['id', 'semanticShape']));
     if (historyRef.current.length > 80) {
       historyRef.current.shift();
     }
@@ -162,11 +296,40 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'select_all') {
+        const objects = canvas.getObjects();
         canvas.discardActiveObject();
-        canvas.getObjects().forEach((object) => object.set({ active: true }));
+        if (objects.length === 1) {
+          canvas.setActiveObject(objects[0]);
+        } else if (objects.length > 1) {
+          canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        }
         canvas.requestRenderAll();
-        setSelectedCount(canvas.getObjects().length);
+        setSelectedCount(objects.length);
         return '已选中全部对象';
+      }
+
+      if (command.intent === 'select_by_description') {
+        const candidates = canvas.getObjects().filter((object) => {
+          const semanticObject = object as SemanticObject;
+          const shapeMatches = !command.shape || semanticObject.semanticShape === command.shape;
+          const colorMatches = !command.color || String(semanticObject.fill).toLowerCase() === command.color.toLowerCase();
+          return shapeMatches && colorMatches;
+        }) as SemanticObject[];
+        const matches = pickByPosition(candidates, command.position);
+        canvas.discardActiveObject();
+        if (matches.length === 0) {
+          canvas.requestRenderAll();
+          setSelectedCount(0);
+          return '没有找到匹配的对象';
+        }
+        if (matches.length === 1) {
+          canvas.setActiveObject(matches[0]);
+        } else {
+          canvas.setActiveObject(new ActiveSelection(matches, { canvas }));
+        }
+        canvas.requestRenderAll();
+        setSelectedCount(matches.length);
+        return `已选中 ${matches.length} 个对象`;
       }
 
       if (command.intent === 'delete_selected') {
@@ -227,6 +390,34 @@ export function useFabricCanvas() {
         return '已旋转选中对象';
       }
 
+      if (command.intent === 'batch_update') {
+        const objects = canvas.getObjects().filter((object) => {
+          const semanticObject = object as SemanticObject;
+          const shapeMatches = !command.filter.shape || semanticObject.semanticShape === command.filter.shape;
+          const colorMatches =
+            !command.filter.color ||
+            String(semanticObject.fill).toLowerCase() === command.filter.color.toLowerCase();
+          return shapeMatches && colorMatches;
+        });
+        if (objects.length === 0) {
+          return '没有找到可批量修改的对象';
+        }
+        objects.forEach((object) => {
+          object.set({
+            fill: command.updates.color ?? object.fill,
+            stroke: command.updates.strokeColor ?? object.stroke,
+            strokeWidth: command.updates.strokeWidth ?? object.strokeWidth,
+          });
+          object.setCoords();
+        });
+        canvas.discardActiveObject();
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(objects.length);
+        pushHistory();
+        return `已批量修改 ${objects.length} 个对象`;
+      }
+
       if (command.intent === 'bring_forward') {
         canvas.getActiveObjects().forEach((object) => canvas.bringObjectForward(object));
         canvas.requestRenderAll();
@@ -259,9 +450,16 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'draw_shape') {
+        const activeObject = canvas.getActiveObject();
+        const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
+        const resolvedCommand = { ...command };
+        if (command.x === undefined && command.y === undefined && relativeCenter) {
+          resolvedCommand.x = relativeCenter.x + 150;
+          resolvedCommand.y = relativeCenter.y;
+        }
         const object = createShape({
-          ...command,
-          color: command.color ?? storeColor,
+          ...resolvedCommand,
+          color: resolvedCommand.color ?? storeColor,
           strokeColor: command.strokeColor ?? storeStrokeColor,
         });
         if (!object) {
@@ -273,6 +471,22 @@ export function useFabricCanvas() {
         canvas.requestRenderAll();
         pushHistory();
         return '已绘制图形';
+      }
+
+      if (command.intent === 'draw_template') {
+        const center = canvas.getActiveObject()
+          ? getObjectCenter(canvas.getActiveObject()!)
+          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const objects =
+          command.template === 'smiley'
+            ? createSmiley(center.x, center.y)
+            : createBarChart(center.x, center.y);
+        objects.forEach((object) => canvas.add(object));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        pushHistory();
+        return command.template === 'smiley' ? '已绘制笑脸模板' : '已绘制柱状图模板';
       }
 
       if (command.intent === 'clear_canvas') {
@@ -310,10 +524,34 @@ export function useFabricCanvas() {
 
       if (command.intent === 'export_png') {
         const link = document.createElement('a');
-        link.download = `voicedraw-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+        link.download = timestampedName('voicedraw', 'png');
         link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
         link.click();
         return '已导出 PNG';
+      }
+
+      if (command.intent === 'export_svg') {
+        downloadTextFile(timestampedName('voicedraw', 'svg'), canvas.toSVG(), 'image/svg+xml');
+        return '已导出 SVG';
+      }
+
+      if (command.intent === 'save_json') {
+        downloadTextFile(
+          timestampedName('voicedraw', 'json'),
+          JSON.stringify(canvas.toObject(['id', 'semanticShape']), null, 2),
+          'application/json',
+        );
+        return '已保存 JSON';
+      }
+
+      if (command.intent === 'open_json') {
+        const json = await readJsonFile();
+        if (!json) {
+          return '没有打开有效的 JSON 文件';
+        }
+        await loadSnapshot(json);
+        pushHistory();
+        return '已打开 JSON 画布';
       }
 
       return command.reason;
