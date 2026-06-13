@@ -328,6 +328,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   const color = findColor(text);
   const opacity = findOpacity(text);
+  if (color && /画布|背景|底色|背景色/.test(text) && /换成|改成|设为|设置|变成|用/.test(text)) {
+    return { intent: 'set_canvas_background', color };
+  }
   if (/透明度|透明|不透明/.test(text) && opacity !== undefined) {
     return { intent: 'set_opacity', opacity };
   }

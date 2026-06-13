@@ -36,6 +36,7 @@ Open http://127.0.0.1:5173.
 - Batch color updates by simple object filters.
 - Correction commands that revise the most recently touched objects.
 - Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
+- Canvas background color command.
 - Listening mode switch between continuous recognition and push-to-talk.
 - In-app command help panel with voice/text commands for showing or hiding help.
 - Manual text command fallback for browsers without speech recognition.
@@ -53,6 +54,7 @@ Open http://127.0.0.1:5173.
 - 画一个蓝色三角形，然后画一个黄色星星
 - 换成绿色
 - 描边改成蓝色
+- 画布背景改成灰色
 - 画笔粗细 8
 - 透明度 50%
 - 半透明
