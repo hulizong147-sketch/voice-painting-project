@@ -11,6 +11,7 @@ import {
   FolderOpen,
   Grid2X2,
   House,
+  Lock,
   Mic,
   MicOff,
   Pencil,
@@ -20,6 +21,9 @@ import {
   Shapes,
   Smile,
   Trash2,
+  Ungroup,
+  Unlock,
+  Workflow,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -177,6 +181,42 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'delete_selected' }, '删除选中')}
         >
           <Eraser size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="组合选中"
+          disabled={selectedCount < 2}
+          onClick={() => void runCommand({ intent: 'group_selected' }, '组合选中')}
+        >
+          <Workflow size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="取消组合"
+          disabled={selectedCount === 0}
+          onClick={() => void runCommand({ intent: 'ungroup_selected' }, '取消组合')}
+        >
+          <Ungroup size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="锁定选中"
+          disabled={selectedCount === 0}
+          onClick={() => void runCommand({ intent: 'lock_selected', locked: true }, '锁定选中')}
+        >
+          <Lock size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="解锁选中"
+          disabled={selectedCount === 0}
+          onClick={() => void runCommand({ intent: 'lock_selected', locked: false }, '解锁选中')}
+        >
+          <Unlock size={18} />
         </button>
         <button
           className="tool-button"
