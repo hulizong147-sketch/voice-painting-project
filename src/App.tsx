@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { RotateCw } from 'lucide-react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import type { DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
@@ -219,7 +220,17 @@ export function App() {
             ) : (
               commands.map((item) => (
                 <article className="command-item" key={item.id}>
-                  <time>{new Date(item.createdAt).toLocaleTimeString()}</time>
+                  <div className="command-item-header">
+                    <time>{new Date(item.createdAt).toLocaleTimeString()}</time>
+                    <button
+                      aria-label={`重新执行：${item.text}`}
+                      title="重新执行"
+                      type="button"
+                      onClick={() => void runTextCommand(item.text)}
+                    >
+                      <RotateCw size={14} />
+                    </button>
+                  </div>
                   <strong>{item.text}</strong>
                   <p>{item.result}</p>
                 </article>
