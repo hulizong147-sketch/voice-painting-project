@@ -116,6 +116,18 @@ function getObjectCenter(object: FabricObject) {
   return { x: center.x, y: center.y };
 }
 
+function getObjectBounds(object: FabricObject) {
+  const rect = object.getBoundingRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+    right: rect.left + rect.width,
+    bottom: rect.top + rect.height,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
 function getObjectId(object: FabricObject) {
   return String(object.get('id') ?? '');
 }
@@ -535,6 +547,78 @@ export function useFabricCanvas() {
         lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
         pushHistory();
         return '已旋转选中对象';
+      }
+
+      if (command.intent === 'align_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length < 2) {
+          return '请至少选中两个对象';
+        }
+        const bounds = activeObjects.map(getObjectBounds);
+        const target = {
+          left: Math.min(...bounds.map((bound) => bound.left)),
+          right: Math.max(...bounds.map((bound) => bound.right)),
+          top: Math.min(...bounds.map((bound) => bound.top)),
+          bottom: Math.max(...bounds.map((bound) => bound.bottom)),
+          centerX: (Math.min(...bounds.map((bound) => bound.left)) + Math.max(...bounds.map((bound) => bound.right))) / 2,
+          centerY: (Math.min(...bounds.map((bound) => bound.top)) + Math.max(...bounds.map((bound) => bound.bottom))) / 2,
+        };
+        activeObjects.forEach((object, index) => {
+          const bound = bounds[index];
+          if (command.alignment === 'left') {
+            object.set({ left: (object.left ?? 0) + target.left - bound.left });
+          }
+          if (command.alignment === 'right') {
+            object.set({ left: (object.left ?? 0) + target.right - bound.right });
+          }
+          if (command.alignment === 'top') {
+            object.set({ top: (object.top ?? 0) + target.top - bound.top });
+          }
+          if (command.alignment === 'bottom') {
+            object.set({ top: (object.top ?? 0) + target.bottom - bound.bottom });
+          }
+          if (command.alignment === 'center_horizontal') {
+            object.set({ left: (object.left ?? 0) + target.centerX - (bound.left + bound.width / 2) });
+          }
+          if (command.alignment === 'center_vertical') {
+            object.set({ top: (object.top ?? 0) + target.centerY - (bound.top + bound.height / 2) });
+          }
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return '已对齐选中对象';
+      }
+
+      if (command.intent === 'distribute_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length < 3) {
+          return '请至少选中三个对象';
+        }
+        const sorted = [...activeObjects].sort((a, b) => {
+          const aCenter = getObjectCenter(a);
+          const bCenter = getObjectCenter(b);
+          return command.axis === 'horizontal' ? aCenter.x - bCenter.x : aCenter.y - bCenter.y;
+        });
+        const first = getObjectCenter(sorted[0]);
+        const last = getObjectCenter(sorted[sorted.length - 1]);
+        const span = command.axis === 'horizontal' ? last.x - first.x : last.y - first.y;
+        const gap = span / (sorted.length - 1);
+        sorted.forEach((object, index) => {
+          const center = getObjectCenter(object);
+          const nextCenter = command.axis === 'horizontal' ? first.x + gap * index : first.y + gap * index;
+          if (command.axis === 'horizontal') {
+            object.set({ left: (object.left ?? 0) + nextCenter - center.x });
+          } else {
+            object.set({ top: (object.top ?? 0) + nextCenter - center.y });
+          }
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = sorted.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return command.axis === 'horizontal' ? '已横向均匀分布' : '已纵向均匀分布';
       }
 
       if (command.intent === 'batch_update') {

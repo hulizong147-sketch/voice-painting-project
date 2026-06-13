@@ -24,6 +24,11 @@ export type DrawingCommand =
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
   | {
+      intent: 'align_selected';
+      alignment: 'left' | 'right' | 'top' | 'bottom' | 'center_horizontal' | 'center_vertical';
+    }
+  | { intent: 'distribute_selected'; axis: 'horizontal' | 'vertical' }
+  | {
       intent: 'batch_update';
       filter: {
         shape?: ShapeKind;

@@ -181,6 +181,31 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     return { intent: 'send_backward' };
   }
 
+  if (/横向均匀分布|水平均匀分布|横向分布|水平分布|排成一排/.test(text)) {
+    return { intent: 'distribute_selected', axis: 'horizontal' };
+  }
+  if (/纵向均匀分布|垂直均匀分布|纵向分布|垂直分布|排成一列/.test(text)) {
+    return { intent: 'distribute_selected', axis: 'vertical' };
+  }
+  if (/左对齐|向左对齐|对齐到左边|靠左对齐/.test(text)) {
+    return { intent: 'align_selected', alignment: 'left' };
+  }
+  if (/右对齐|向右对齐|对齐到右边|靠右对齐/.test(text)) {
+    return { intent: 'align_selected', alignment: 'right' };
+  }
+  if (/顶部对齐|上对齐|向上对齐|对齐到顶部|对齐到上边/.test(text)) {
+    return { intent: 'align_selected', alignment: 'top' };
+  }
+  if (/底部对齐|下对齐|向下对齐|对齐到底部|对齐到下边/.test(text)) {
+    return { intent: 'align_selected', alignment: 'bottom' };
+  }
+  if (/水平居中|横向居中|水平居中对齐|横向居中对齐/.test(text)) {
+    return { intent: 'align_selected', alignment: 'center_horizontal' };
+  }
+  if (/垂直居中|纵向居中|垂直居中对齐|纵向居中对齐/.test(text)) {
+    return { intent: 'align_selected', alignment: 'center_vertical' };
+  }
+
   const moveDistance = /一点|一些/.test(text) ? 40 : Number(text.match(/(\d+)/)?.[1] ?? 80);
   if (/移动|挪|移/.test(text)) {
     if (/左/.test(text)) {
