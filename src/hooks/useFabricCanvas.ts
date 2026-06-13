@@ -417,6 +417,7 @@ export function useFabricCanvas() {
   const redoRef = useRef<CanvasSnapshot[]>([]);
   const lastTouchedIdsRef = useRef<string[]>([]);
   const clipboardObjectsRef = useRef<FabricObject[]>([]);
+  const customCanvasSizeRef = useRef<{ width: number; height: number } | null>(null);
   const ignoreHistoryRef = useRef(false);
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
@@ -953,6 +954,16 @@ export function useFabricCanvas() {
         return '画布已适应屏幕';
       }
 
+      if (command.intent === 'set_canvas_size') {
+        const width = Math.max(320, Math.min(2400, Math.round(command.width)));
+        const height = Math.max(320, Math.min(2400, Math.round(command.height)));
+        customCanvasSizeRef.current = { width, height };
+        canvas.setDimensions({ width, height });
+        canvas.requestRenderAll();
+        pushHistory();
+        return `画布尺寸已设为 ${width}x${height}`;
+      }
+
       if (command.intent === 'pan_canvas') {
         const viewport = canvas.viewportTransform;
         if (viewport) {
@@ -1131,6 +1142,7 @@ export function useFabricCanvas() {
         canvas.isDrawingMode = false;
         canvas.requestRenderAll();
         clipboardObjectsRef.current = [];
+        customCanvasSizeRef.current = null;
         lastTouchedIdsRef.current = [];
         redoRef.current = [];
         historyRef.current = [];
@@ -1253,6 +1265,11 @@ export function useFabricCanvas() {
     fabricCanvasRef.current = canvas;
 
     const resize = () => {
+      if (customCanvasSizeRef.current) {
+        canvas.setDimensions(customCanvasSizeRef.current);
+        canvas.requestRenderAll();
+        return;
+      }
       const bounds = stage.getBoundingClientRect();
       const style = window.getComputedStyle(stage);
       const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);

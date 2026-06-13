@@ -236,6 +236,23 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/适应屏幕|适合屏幕|重置视图|原始大小/.test(text)) {
     return { intent: 'fit_canvas' };
   }
+  const canvasSizeMatch = rawText.match(/(\d{3,4})\s*[xX×*]\s*(\d{3,4})/);
+  if (/画布|尺寸|大小/.test(text) && canvasSizeMatch) {
+    return {
+      intent: 'set_canvas_size',
+      width: Number(canvasSizeMatch[1]),
+      height: Number(canvasSizeMatch[2]),
+    };
+  }
+  if (/画布/.test(text) && /横版|宽屏|16比9|16:9/.test(text)) {
+    return { intent: 'set_canvas_size', width: 1280, height: 720 };
+  }
+  if (/画布/.test(text) && /竖版|竖屏|9比16|9:16/.test(text)) {
+    return { intent: 'set_canvas_size', width: 720, height: 1280 };
+  }
+  if (/画布/.test(text) && /方形|正方形|1比1|1:1/.test(text)) {
+    return { intent: 'set_canvas_size', width: 900, height: 900 };
+  }
   if (/画布/.test(text) && /放大|缩放大/.test(text)) {
     return { intent: 'zoom_canvas', factor: 1.2 };
   }

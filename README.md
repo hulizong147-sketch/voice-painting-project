@@ -37,6 +37,7 @@ Open http://127.0.0.1:5173.
 - Correction commands that revise the most recently touched objects.
 - Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
 - Canvas background color command.
+- Canvas size commands for exact dimensions and common presets.
 - Listening mode switch between continuous recognition and push-to-talk.
 - In-app command help panel with voice/text commands for showing or hiding help.
 - Manual text command fallback for browsers without speech recognition.
@@ -92,6 +93,8 @@ Open http://127.0.0.1:5173.
 - 放大画布
 - 缩小画布
 - 适应屏幕
+- 画布改成 1280x720
+- 横版画布
 - 开启吸附
 - 画布向右移动
 - 切换到按住说话，然后按住空格发出命令
