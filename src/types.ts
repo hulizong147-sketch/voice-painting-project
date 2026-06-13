@@ -76,6 +76,7 @@ export type DrawingCommand =
   | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' }
   | { intent: 'undo' }
   | { intent: 'redo' }
+  | { intent: 'new_canvas' }
   | { intent: 'clear_canvas' }
   | { intent: 'export_png' }
   | { intent: 'export_svg' }

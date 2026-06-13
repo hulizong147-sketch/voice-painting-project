@@ -112,6 +112,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/重做|恢复|下一步/.test(text)) {
     return { intent: 'redo' };
   }
+  if (/新建画布|新建项目|重新开始|新画布/.test(text)) {
+    return { intent: 'new_canvas' };
+  }
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
   }
