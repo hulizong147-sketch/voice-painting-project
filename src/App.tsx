@@ -26,6 +26,7 @@ export function App() {
   const setListeningMode = useDrawingStore((state) => state.setListeningMode);
   const setHelpVisible = useDrawingStore((state) => state.setHelpVisible);
   const addCommand = useDrawingStore((state) => state.addCommand);
+  const clearCommands = useDrawingStore((state) => state.clearCommands);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
   const [typedCommand, setTypedCommand] = useState('');
   const executeRef = useRef<(command: DrawingCommand) => Promise<string>>();
@@ -214,7 +215,12 @@ export function App() {
             <button type="submit">执行</button>
           </form>
           <div className="command-list">
-            <h2>命令历史</h2>
+            <div className="command-list-header">
+              <h2>命令历史</h2>
+              <button type="button" onClick={clearCommands} disabled={commands.length === 0}>
+                清空
+              </button>
+            </div>
             {commands.length === 0 ? (
               <p className="empty-copy">还没有命令。</p>
             ) : (

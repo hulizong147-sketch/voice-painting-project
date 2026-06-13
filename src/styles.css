@@ -319,6 +319,32 @@ h1 {
   overflow: auto;
 }
 
+.command-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.command-list-header button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.command-list-header button:not(:disabled):hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.command-list-header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .empty-copy {
   color: var(--ink-muted);
   font-size: 14px;
