@@ -115,6 +115,10 @@ function getObjectCenter(object: FabricObject) {
   return { x: center.x, y: center.y };
 }
 
+function getObjectId(object: FabricObject) {
+  return String(object.get('id') ?? '');
+}
+
 function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {
   if (!position || objects.length <= 1) {
     return objects;
@@ -233,6 +237,7 @@ export function useFabricCanvas() {
   const fabricCanvasRef = useRef<Canvas | null>(null);
   const historyRef = useRef<CanvasSnapshot[]>([]);
   const redoRef = useRef<CanvasSnapshot[]>([]);
+  const lastTouchedIdsRef = useRef<string[]>([]);
   const ignoreHistoryRef = useRef(false);
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
@@ -329,6 +334,7 @@ export function useFabricCanvas() {
         }
         canvas.requestRenderAll();
         setSelectedCount(matches.length);
+        lastTouchedIdsRef.current = matches.map(getObjectId).filter(Boolean);
         return `已选中 ${matches.length} 个对象`;
       }
 
@@ -358,6 +364,7 @@ export function useFabricCanvas() {
           object.setCoords();
         });
         canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
         pushHistory();
         return '已移动选中对象';
       }
@@ -372,6 +379,7 @@ export function useFabricCanvas() {
           object.setCoords();
         });
         canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
         pushHistory();
         return '已缩放选中对象';
       }
@@ -386,6 +394,7 @@ export function useFabricCanvas() {
           object.setCoords();
         });
         canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
         pushHistory();
         return '已旋转选中对象';
       }
@@ -414,8 +423,38 @@ export function useFabricCanvas() {
         canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
         setSelectedCount(objects.length);
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
         return `已批量修改 ${objects.length} 个对象`;
+      }
+
+      if (command.intent === 'correct_last') {
+        const objects = canvas
+          .getObjects()
+          .filter((object) => lastTouchedIdsRef.current.includes(getObjectId(object)));
+        const targets = objects.length > 0 ? objects : canvas.getActiveObjects();
+        if (targets.length === 0) {
+          return '没有可修正的上一条对象';
+        }
+        targets.forEach((object) => {
+          if (command.updates.color) {
+            object.set({ fill: command.updates.color });
+          }
+          if (command.updates.sizeFactor) {
+            object.scale((object.scaleX ?? 1) * command.updates.sizeFactor);
+          }
+          if (command.updates.angle !== undefined) {
+            object.rotate(command.updates.angle);
+          }
+          object.setCoords();
+        });
+        canvas.discardActiveObject();
+        canvas.setActiveObject(targets.length === 1 ? targets[0] : new ActiveSelection(targets, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(targets.length);
+        lastTouchedIdsRef.current = targets.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return '已修正上一条操作';
       }
 
       if (command.intent === 'bring_forward') {
@@ -469,6 +508,7 @@ export function useFabricCanvas() {
         canvas.add(object);
         canvas.setActiveObject(object);
         canvas.requestRenderAll();
+        lastTouchedIdsRef.current = [getObjectId(object)].filter(Boolean);
         pushHistory();
         return '已绘制图形';
       }
@@ -485,6 +525,7 @@ export function useFabricCanvas() {
         canvas.discardActiveObject();
         canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
         return command.template === 'smiley' ? '已绘制笑脸模板' : '已绘制柱状图模板';
       }

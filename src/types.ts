@@ -35,6 +35,14 @@ export type DrawingCommand =
         strokeWidth?: number;
       };
     }
+  | {
+      intent: 'correct_last';
+      updates: {
+        color?: string;
+        sizeFactor?: number;
+        angle?: number;
+      };
+    }
   | { intent: 'bring_forward' }
   | { intent: 'send_backward' }
   | { intent: 'set_free_drawing'; enabled: boolean }
