@@ -25,7 +25,7 @@ Open http://127.0.0.1:5173.
 - Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back.
 - Natural language object selection by color, shape, and simple positional words.
 - Relative drawing near the current selection.
-- Built-in smiley and bar chart templates.
+- Built-in smiley and bar chart templates with toolbar shortcuts.
 - Additional templates for flowcharts, suns, and houses.
 - Free drawing mode using Fabric PencilBrush.
 - Grid visibility toggle from voice commands, toolbar controls, and status display.
