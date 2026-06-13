@@ -6,6 +6,7 @@ import {
   FabricObject,
   Line,
   PencilBrush,
+  Point,
   Polygon,
   Rect,
   Triangle,
@@ -242,11 +243,14 @@ export function useFabricCanvas() {
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
   const setFreeDrawing = useDrawingStore((state) => state.setFreeDrawing);
+  const setSnapEnabled = useDrawingStore((state) => state.setSnapEnabled);
   const setShowGrid = useDrawingStore((state) => state.setShowGrid);
   const setStrokeWidth = useDrawingStore((state) => state.setStrokeWidth);
+  const setZoom = useDrawingStore((state) => state.setZoom);
   const storeColor = useDrawingStore((state) => state.currentColor);
   const storeStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const storeStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
+  const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const showGrid = useDrawingStore((state) => state.showGrid);
 
   const pushHistory = useCallback(() => {
@@ -488,6 +492,38 @@ export function useFabricCanvas() {
         return enabled ? '已显示网格' : '已隐藏网格';
       }
 
+      if (command.intent === 'toggle_snap') {
+        const enabled = command.enabled ?? !snapEnabled;
+        setSnapEnabled(enabled);
+        return enabled ? '已开启吸附' : '已关闭吸附';
+      }
+
+      if (command.intent === 'zoom_canvas') {
+        const nextZoom = Math.max(0.35, Math.min(3, canvas.getZoom() * command.factor));
+        canvas.zoomToPoint(new Point(canvas.getWidth() / 2, canvas.getHeight() / 2), nextZoom);
+        canvas.requestRenderAll();
+        setZoom(nextZoom);
+        return `画布缩放为 ${Math.round(nextZoom * 100)}%`;
+      }
+
+      if (command.intent === 'fit_canvas') {
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        canvas.requestRenderAll();
+        setZoom(1);
+        return '画布已适应屏幕';
+      }
+
+      if (command.intent === 'pan_canvas') {
+        const viewport = canvas.viewportTransform;
+        if (viewport) {
+          viewport[4] += command.dx;
+          viewport[5] += command.dy;
+          canvas.setViewportTransform(viewport);
+        }
+        canvas.requestRenderAll();
+        return '已平移画布';
+      }
+
       if (command.intent === 'draw_shape') {
         const activeObject = canvas.getActiveObject();
         const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
@@ -601,10 +637,14 @@ export function useFabricCanvas() {
       loadSnapshot,
       pushHistory,
       setColor,
+      setSnapEnabled,
       setStrokeWidth,
+      setZoom,
+      snapEnabled,
       storeColor,
       storeStrokeColor,
       storeStrokeWidth,
+      showGrid,
     ],
   );
 
@@ -635,6 +675,17 @@ export function useFabricCanvas() {
     };
 
     const updateSelection = () => setSelectedCount(canvas.getActiveObjects().length);
+    const snapObject = (event: { target?: FabricObject }) => {
+      if (!useDrawingStore.getState().snapEnabled || !event.target) {
+        return;
+      }
+      const gridSize = 20;
+      event.target.set({
+        left: Math.round((event.target.left ?? 0) / gridSize) * gridSize,
+        top: Math.round((event.target.top ?? 0) / gridSize) * gridSize,
+      });
+      event.target.setCoords();
+    };
     const observer = new ResizeObserver(resize);
     observer.observe(stage);
     resize();
@@ -643,6 +694,7 @@ export function useFabricCanvas() {
     canvas.on('selection:created', updateSelection);
     canvas.on('selection:updated', updateSelection);
     canvas.on('selection:cleared', updateSelection);
+    canvas.on('object:moving', snapObject);
     canvas.on('object:modified', pushHistory);
     canvas.on('path:created', pushHistory);
 

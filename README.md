@@ -31,6 +31,7 @@ Open http://127.0.0.1:5173.
 - Canvas JSON save and restore.
 - Batch color updates by simple object filters.
 - Correction commands that revise the most recently touched objects.
+- Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
@@ -53,6 +54,11 @@ Open http://127.0.0.1:5173.
 - 不对，改成深蓝色
 - 等一下，放大一点
 - 不是，旋转 30 度
+- 放大画布
+- 缩小画布
+- 适应屏幕
+- 开启吸附
+- 画布向右移动
 - 删除选中
 - 撤销
 - 重做

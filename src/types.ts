@@ -47,6 +47,10 @@ export type DrawingCommand =
   | { intent: 'send_backward' }
   | { intent: 'set_free_drawing'; enabled: boolean }
   | { intent: 'toggle_grid'; enabled?: boolean }
+  | { intent: 'toggle_snap'; enabled?: boolean }
+  | { intent: 'zoom_canvas'; factor: number }
+  | { intent: 'fit_canvas' }
+  | { intent: 'pan_canvas'; dx: number; dy: number }
   | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' }
   | { intent: 'undo' }
   | { intent: 'redo' }
@@ -71,6 +75,8 @@ export interface DrawingContextState {
   currentStrokeWidth: number;
   selectedCount: number;
   showGrid: boolean;
+  snapEnabled: boolean;
+  zoom: number;
   freeDrawing: boolean;
   isListening: boolean;
   transcript: string;

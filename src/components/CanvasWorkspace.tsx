@@ -3,12 +3,15 @@ import {
   Download,
   FileJson,
   FileUp,
+  Grid2X2,
   Mic,
   MicOff,
   Redo2,
   RotateCcw,
   Shapes,
   Trash2,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import type { DrawingCommand } from '../types';
@@ -55,6 +58,38 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'draw_shape', shape: 'circle' }, '画一个圆')}
         >
           <Shapes size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="放大画布"
+          onClick={() => void runCommand({ intent: 'zoom_canvas', factor: 1.2 }, '放大画布')}
+        >
+          <ZoomIn size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="缩小画布"
+          onClick={() => void runCommand({ intent: 'zoom_canvas', factor: 0.8 }, '缩小画布')}
+        >
+          <ZoomOut size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="适应屏幕"
+          onClick={() => void runCommand({ intent: 'fit_canvas' }, '适应屏幕')}
+        >
+          1:1
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="吸附网格"
+          onClick={() => void runCommand({ intent: 'toggle_snap' }, '切换吸附')}
+        >
+          <Grid2X2 size={18} />
         </button>
         <button
           className="tool-button"

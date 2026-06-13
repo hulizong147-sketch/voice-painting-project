@@ -10,6 +10,8 @@ export function App() {
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
   const showGrid = useDrawingStore((state) => state.showGrid);
+  const snapEnabled = useDrawingStore((state) => state.snapEnabled);
+  const zoom = useDrawingStore((state) => state.zoom);
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
   const transcript = useDrawingStore((state) => state.transcript);
@@ -72,6 +74,8 @@ export function App() {
           <span>选中 {selectedCount}</span>
           <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
           <span>{showGrid ? '网格开' : '网格关'}</span>
+          <span>{snapEnabled ? '吸附开' : '吸附关'}</span>
+          <span>{Math.round(zoom * 100)}%</span>
         </div>
       </header>
       <section className="workspace">
