@@ -6,10 +6,20 @@ VoiceDraw is a browser-based voice drawing workbench built from the project desi
 
 ```bash
 npm install
+copy .env.example .env
 npm run dev -- --port 5173
 ```
 
 Open http://127.0.0.1:5173.
+
+For Baidu speech recognition, create a Baidu Intelligent Cloud speech app and fill these values in `.env`:
+
+```bash
+BAIDU_ASR_API_KEY=your_api_key
+BAIDU_ASR_SECRET_KEY=your_secret_key
+BAIDU_ASR_CUID=voicedraw-web
+BAIDU_ASR_DEV_PID=1537
+```
 
 ## Implemented
 
@@ -17,7 +27,7 @@ Open http://127.0.0.1:5173.
 - Text object editing and basic text styling for selected text boxes.
 - Chinese text and voice command parsing for basic drawing commands.
 - Sequence drawing for simple repeated layouts such as rows and columns.
-- Continuous Web Speech API listening with zh-CN recognition.
+- Baidu speech recognition through a local backend, with browser Web Speech fallback.
 - SpeechSynthesis feedback after command execution.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
 - Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color and stroke width.
