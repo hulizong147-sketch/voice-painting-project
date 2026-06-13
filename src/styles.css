@@ -208,7 +208,14 @@ h1 {
 .canvas-stage canvas {
   display: block;
   border: 1px solid var(--line);
+}
+
+.canvas-stage .lower-canvas {
   background: #fff;
+}
+
+.canvas-stage .upper-canvas {
+  background: transparent;
 }
 
 .canvas-stage .canvas-container {
