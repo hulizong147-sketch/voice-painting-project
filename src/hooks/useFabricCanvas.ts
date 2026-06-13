@@ -903,17 +903,47 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'bring_forward') {
-        canvas.getActiveObjects().forEach((object) => canvas.bringObjectForward(object));
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => canvas.bringObjectForward(object));
         canvas.requestRenderAll();
         pushHistory();
         return '已上移一层';
       }
 
       if (command.intent === 'send_backward') {
-        canvas.getActiveObjects().forEach((object) => canvas.sendObjectBackwards(object));
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => canvas.sendObjectBackwards(object));
         canvas.requestRenderAll();
         pushHistory();
         return '已下移一层';
+      }
+
+      if (command.intent === 'bring_to_front') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => canvas.bringObjectToFront(object));
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已置顶选中对象';
+      }
+
+      if (command.intent === 'send_to_back') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => canvas.sendObjectToBack(object));
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已置底选中对象';
       }
 
       if (command.intent === 'set_free_drawing') {

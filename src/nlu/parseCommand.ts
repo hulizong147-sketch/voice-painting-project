@@ -271,10 +271,16 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/画布/.test(text) && /下/.test(text)) {
     return { intent: 'pan_canvas', dx: 0, dy: 80 };
   }
-  if (/上移一层|放到上面|置顶/.test(text)) {
+  if (/置顶|放到最上面|放到最前面|移到最上面|移到最前面/.test(text)) {
+    return { intent: 'bring_to_front' };
+  }
+  if (/置底|放到最下面|放到最底下|移到最下面|移到最底下/.test(text)) {
+    return { intent: 'send_to_back' };
+  }
+  if (/上移一层|放到上面/.test(text)) {
     return { intent: 'bring_forward' };
   }
-  if (/下移一层|放到底下|置底/.test(text)) {
+  if (/下移一层|放到底下/.test(text)) {
     return { intent: 'send_backward' };
   }
 
