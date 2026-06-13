@@ -33,6 +33,7 @@ export function CanvasWorkspace({
   const { canvasElementRef, executeCommand } = useFabricCanvas();
   const isListening = useDrawingStore((state) => state.isListening);
   const showGrid = useDrawingStore((state) => state.showGrid);
+  const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
@@ -86,9 +87,17 @@ export function CanvasWorkspace({
           1:1
         </button>
         <button
-          className="tool-button"
+          className={showGrid ? 'tool-button active' : 'tool-button'}
           type="button"
-          title="吸附网格"
+          title={showGrid ? '隐藏网格' : '显示网格'}
+          onClick={() => void runCommand({ intent: 'toggle_grid' }, '切换网格')}
+        >
+          <Grid2X2 size={18} />
+        </button>
+        <button
+          className={snapEnabled ? 'tool-button active' : 'tool-button'}
+          type="button"
+          title={snapEnabled ? '关闭吸附' : '开启吸附'}
           onClick={() => void runCommand({ intent: 'toggle_snap' }, '切换吸附')}
         >
           <Grid2X2 size={18} />
