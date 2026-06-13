@@ -331,6 +331,30 @@ h1 {
   border-top: 1px solid var(--line);
 }
 
+.command-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.command-item-header button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink-muted);
+}
+
+.command-item-header button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .command-item time {
   color: var(--ink-muted);
   font-size: 12px;
