@@ -16,7 +16,7 @@ function loadDotEnv() {
     if (separator === -1) {
       continue;
     }
-    const key = trimmed.slice(0, separator).trim();
+    const key = trimmed.slice(0, separator).trim().replace(/^\uFEFF/, '');
     const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, '');
     if (key && process.env[key] === undefined) {
       process.env[key] = value;
@@ -29,6 +29,7 @@ loadDotEnv();
 const PORT = Number(process.env.BAIDU_ASR_PORT ?? 3001);
 const TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token';
 const ASR_URL = 'https://vop.baidu.com/server_api';
+const TTS_URL = 'https://tsn.baidu.com/text2audio';
 const TOKEN_REFRESH_WINDOW_MS = 60 * 60 * 1000;
 
 let cachedToken = null;
@@ -41,6 +42,17 @@ function sendJson(response, status, payload) {
     'Content-Type': 'application/json; charset=utf-8',
   });
   response.end(JSON.stringify(payload));
+}
+
+function sendAudio(response, contentType, payload) {
+  response.writeHead(200, {
+    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'no-store',
+    'Content-Type': contentType,
+  });
+  response.end(payload);
 }
 
 function readJson(request) {
@@ -60,10 +72,10 @@ function readJson(request) {
 }
 
 async function getAccessToken() {
-  const apiKey = process.env.BAIDU_ASR_API_KEY;
-  const secretKey = process.env.BAIDU_ASR_SECRET_KEY;
+  const apiKey = process.env.BAIDU_API_KEY ?? process.env.BAIDU_ASR_API_KEY;
+  const secretKey = process.env.BAIDU_SECRET_KEY ?? process.env.BAIDU_ASR_SECRET_KEY;
   if (!apiKey || !secretKey) {
-    throw new Error('Missing BAIDU_ASR_API_KEY or BAIDU_ASR_SECRET_KEY');
+    throw new Error('Missing BAIDU_API_KEY/BAIDU_SECRET_KEY or BAIDU_ASR_API_KEY/BAIDU_ASR_SECRET_KEY');
   }
 
   if (cachedToken && cachedToken.expiresAt - Date.now() > TOKEN_REFRESH_WINDOW_MS) {
@@ -123,26 +135,80 @@ async function transcribeWithBaidu(body) {
   };
 }
 
+async function synthesizeWithBaidu(body) {
+  const text = String(body.text ?? '').trim();
+  if (!text) {
+    throw new Error('Missing text payload');
+  }
+
+  const token = await getAccessToken();
+  const params = new URLSearchParams({
+    tex: text.slice(0, 512),
+    tok: token,
+    cuid: process.env.BAIDU_TTS_CUID ?? process.env.BAIDU_ASR_CUID ?? 'voicedraw-web',
+    ctp: '1',
+    lan: 'zh',
+    spd: String(process.env.BAIDU_TTS_SPD ?? 5),
+    pit: String(process.env.BAIDU_TTS_PIT ?? 5),
+    vol: String(process.env.BAIDU_TTS_VOL ?? 7),
+    per: String(process.env.BAIDU_TTS_PER ?? 0),
+    aue: String(process.env.BAIDU_TTS_AUE ?? 3),
+  });
+
+  const baiduResponse = await fetch(TTS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params,
+  });
+  const contentType = baiduResponse.headers.get('content-type') ?? 'audio/mpeg';
+  const payload = Buffer.from(await baiduResponse.arrayBuffer());
+
+  if (!baiduResponse.ok || contentType.includes('application/json')) {
+    let message = `Baidu TTS failed with HTTP ${baiduResponse.status}`;
+    try {
+      const data = JSON.parse(payload.toString('utf8'));
+      message = data.err_msg ?? data.error_description ?? data.error ?? message;
+    } catch {
+      // Keep the HTTP-level message when Baidu does not return JSON.
+    }
+    throw new Error(message);
+  }
+
+  return {
+    contentType,
+    payload,
+  };
+}
+
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     sendJson(response, 204, {});
     return;
   }
 
-  if (request.method !== 'POST' || request.url !== '/api/asr/baidu') {
+  if (request.method !== 'POST') {
     sendJson(response, 404, { error: 'Not found' });
     return;
   }
 
   try {
     const body = await readJson(request);
-    const result = await transcribeWithBaidu(body);
-    sendJson(response, 200, result);
+    if (request.url === '/api/asr/baidu') {
+      const result = await transcribeWithBaidu(body);
+      sendJson(response, 200, result);
+      return;
+    }
+    if (request.url === '/api/tts/baidu') {
+      const result = await synthesizeWithBaidu(body);
+      sendAudio(response, result.contentType, result.payload);
+      return;
+    }
+    sendJson(response, 404, { error: 'Not found' });
   } catch (error) {
-    sendJson(response, 500, { error: error instanceof Error ? error.message : 'Unknown ASR error' });
+    sendJson(response, 500, { error: error instanceof Error ? error.message : 'Unknown Baidu speech error' });
   }
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Baidu ASR server listening on http://127.0.0.1:${PORT}`);
+  console.log(`Baidu speech server listening on http://127.0.0.1:${PORT}`);
 });

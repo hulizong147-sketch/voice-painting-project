@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/asr': 'http://127.0.0.1:3001',
+      '/api/tts': 'http://127.0.0.1:3001',
     },
   },
   build: {
