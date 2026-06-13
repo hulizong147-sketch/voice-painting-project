@@ -10,6 +10,17 @@ export type DrawingCommand =
       x?: number;
       y?: number;
     }
+  | {
+      intent: 'draw_sequence';
+      shape: ShapeKind;
+      count: number;
+      layout: 'row' | 'column';
+      color?: string;
+      strokeColor?: string;
+      size?: number;
+      x?: number;
+      y?: number;
+    }
   | { intent: 'set_color'; color: string }
   | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }

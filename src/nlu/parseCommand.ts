@@ -43,6 +43,28 @@ function findSize(text: string) {
   return sizeWords.find(([pattern]) => pattern.test(text))?.[1];
 }
 
+function findCount(text: string) {
+  const explicit = text.match(/(\d+)\s*(个|只|条)?/);
+  if (explicit) {
+    return Number(explicit[1]);
+  }
+  const chineseNumbers: Record<string, number> = {
+    一: 1,
+    二: 2,
+    两: 2,
+    三: 3,
+    四: 4,
+    五: 5,
+    六: 6,
+    七: 7,
+    八: 8,
+    九: 9,
+    十: 10,
+  };
+  const matched = Object.entries(chineseNumbers).find(([word]) => text.includes(`${word}个`) || text.includes(`${word}只`) || text.includes(`${word}条`));
+  return matched?.[1];
+}
+
 function findPosition(text: string) {
   return positionWords.find(([pattern]) => pattern.test(text))?.[1] ?? {};
 }
@@ -302,6 +324,18 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
       shape,
       color,
       position: findTargetPosition(text),
+    };
+  }
+  const count = findCount(text);
+  if (shape && count && count > 1 && /排成一排|一排|横向排列|水平排列|排成一列|一列|纵向排列|垂直排列/.test(text)) {
+    return {
+      intent: 'draw_sequence',
+      shape,
+      count: Math.min(12, count),
+      layout: /排成一列|一列|纵向排列|垂直排列/.test(text) ? 'column' : 'row',
+      color,
+      size: findSize(text),
+      ...findPosition(text),
     };
   }
   if (shape && /画|绘制|放|来个|生成/.test(text)) {

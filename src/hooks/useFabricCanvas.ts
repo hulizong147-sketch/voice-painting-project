@@ -847,6 +847,43 @@ export function useFabricCanvas() {
         return '已平移画布';
       }
 
+      if (command.intent === 'draw_sequence') {
+        const activeObject = canvas.getActiveObject();
+        const center = command.x !== undefined && command.y !== undefined
+          ? { x: command.x, y: command.y }
+          : activeObject
+            ? getObjectCenter(activeObject)
+            : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const count = Math.max(2, Math.min(12, command.count));
+        const size = command.size ?? defaultSizeByShape[command.shape];
+        const spacing = Math.max(72, size * 1.25);
+        const objects = Array.from({ length: count }, (_, index) => {
+          const offset = (index - (count - 1) / 2) * spacing;
+          const object = createShape({
+            intent: 'draw_shape',
+            shape: command.shape,
+            color: command.color ?? storeColor,
+            strokeColor: command.strokeColor ?? storeStrokeColor,
+            size,
+            x: center.x + (command.layout === 'row' ? offset : 0),
+            y: center.y + (command.layout === 'column' ? offset : 0),
+          });
+          object?.set({ opacity: storeOpacity, strokeWidth: storeStrokeWidth });
+          return object;
+        }).filter((object): object is FabricObject => Boolean(object));
+        if (objects.length === 0) {
+          return '暂不支持这个图形';
+        }
+        objects.forEach((object) => canvas.add(object));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(objects.length);
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已绘制 ${objects.length} 个图形`;
+      }
+
       if (command.intent === 'draw_shape') {
         const activeObject = canvas.getActiveObject();
         const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
