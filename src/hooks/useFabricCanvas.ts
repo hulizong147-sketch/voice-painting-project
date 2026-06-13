@@ -546,6 +546,27 @@ export function useFabricCanvas() {
         return '已删除选中对象';
       }
 
+      if (command.intent === 'delete_by_description') {
+        const objects = canvas.getObjects().filter((object) => {
+          const semanticObject = object as SemanticObject;
+          const shapeMatches = !command.filter.shape || semanticObject.semanticShape === command.filter.shape;
+          const colorMatches =
+            !command.filter.color ||
+            String(semanticObject.fill).toLowerCase() === command.filter.color.toLowerCase();
+          return shapeMatches && colorMatches;
+        });
+        if (objects.length === 0) {
+          return '没有找到可删除的对象';
+        }
+        objects.forEach((object) => canvas.remove(object));
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        setSelectedCount(0);
+        lastTouchedIdsRef.current = [];
+        pushHistory();
+        return `已删除 ${objects.length} 个对象`;
+      }
+
       if (command.intent === 'copy_selected') {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length === 0) {

@@ -33,6 +33,13 @@ export type DrawingCommand =
       position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost';
     }
   | { intent: 'delete_selected' }
+  | {
+      intent: 'delete_by_description';
+      filter: {
+        shape?: ShapeKind;
+        color?: string;
+      };
+    }
   | { intent: 'copy_selected' }
   | { intent: 'paste_selected' }
   | { intent: 'duplicate_selected' }
