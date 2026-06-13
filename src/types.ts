@@ -93,6 +93,7 @@ export type DrawingCommand =
   | { intent: 'toggle_snap'; enabled?: boolean }
   | { intent: 'zoom_canvas'; factor: number }
   | { intent: 'fit_canvas' }
+  | { intent: 'set_canvas_size'; width: number; height: number }
   | { intent: 'pan_canvas'; dx: number; dy: number }
   | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' }
   | { intent: 'undo'; steps?: number }
