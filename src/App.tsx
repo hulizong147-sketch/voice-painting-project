@@ -15,17 +15,22 @@ export function App() {
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
   const listeningMode = useDrawingStore((state) => state.listeningMode);
+  const helpVisible = useDrawingStore((state) => state.helpVisible);
   const transcript = useDrawingStore((state) => state.transcript);
   const feedback = useDrawingStore((state) => state.feedback);
   const commands = useDrawingStore((state) => state.commands);
   const setListening = useDrawingStore((state) => state.setListening);
   const setListeningMode = useDrawingStore((state) => state.setListeningMode);
+  const setHelpVisible = useDrawingStore((state) => state.setHelpVisible);
   const addCommand = useDrawingStore((state) => state.addCommand);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
   const [typedCommand, setTypedCommand] = useState('');
   const executeRef = useRef<(command: DrawingCommand) => Promise<string>>();
 
   const handleCommand = useCallback((_command: DrawingCommand, text: string, result: string) => {
+    if (_command.intent === 'show_help') {
+      setHelpVisible(_command.visible ?? true);
+    }
     addCommand({
       id: crypto.randomUUID(),
       text,
@@ -38,7 +43,7 @@ export function App() {
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(result));
     }
-  }, [addCommand, setFeedback]);
+  }, [addCommand, setFeedback, setHelpVisible]);
 
   const runTextCommand = useCallback(
     async (text: string) => {
@@ -163,6 +168,25 @@ export function App() {
               按住说话
             </button>
           </div>
+          <section className={helpVisible ? 'help-panel' : 'help-panel collapsed'}>
+            <button
+              type="button"
+              onClick={() => setHelpVisible(!helpVisible)}
+              aria-expanded={helpVisible}
+            >
+              命令示例
+            </button>
+            {helpVisible ? (
+              <div className="help-grid">
+                <span>画一个红色的圆</span>
+                <span>选中最左边的圆</span>
+                <span>不对，改成蓝色</span>
+                <span>把所有红色圆改成蓝色</span>
+                <span>导出 SVG</span>
+                <span>适应屏幕</span>
+              </div>
+            ) : null}
+          </section>
           <form
             className="text-command"
             onSubmit={(event) => {

@@ -59,6 +59,7 @@ export type DrawingCommand =
   | { intent: 'export_svg' }
   | { intent: 'save_json' }
   | { intent: 'open_json' }
+  | { intent: 'show_help'; visible?: boolean }
   | { intent: 'unknown'; reason: string };
 
 export interface CommandHistoryItem {
@@ -80,6 +81,7 @@ export interface DrawingContextState {
   freeDrawing: boolean;
   isListening: boolean;
   listeningMode: 'continuous' | 'push_to_talk';
+  helpVisible: boolean;
   transcript: string;
   feedback: string;
   commands: CommandHistoryItem[];

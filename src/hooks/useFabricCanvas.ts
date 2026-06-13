@@ -631,6 +631,10 @@ export function useFabricCanvas() {
         return '已打开 JSON 画布';
       }
 
+      if (command.intent === 'show_help') {
+        return command.visible === false ? '已隐藏命令帮助' : '已显示命令帮助';
+      }
+
       return command.reason;
     },
     [
