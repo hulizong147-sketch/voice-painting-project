@@ -10,6 +10,7 @@ import {
   Point,
   Polygon,
   Rect,
+  Textbox,
   Triangle,
 } from 'fabric';
 import type { DrawingCommand, ShapeKind } from '../types';
@@ -38,6 +39,7 @@ const defaultSizeByShape: Record<ShapeKind, number> = {
   triangle: 135,
   line: 180,
   star: 140,
+  text: 180,
 };
 
 function makeId() {
@@ -120,6 +122,24 @@ function createShape(command: Extract<DrawingCommand, { intent: 'draw_shape' }>)
     default:
       return null;
   }
+}
+
+function createTextObject(command: Extract<DrawingCommand, { intent: 'add_text' }>) {
+  return withSemanticShape(
+    new Textbox(command.text, {
+      left: command.x ?? 320,
+      top: command.y ?? 220,
+      width: 280,
+      fill: command.color ?? '#172018',
+      fontFamily: 'Inter, "Microsoft YaHei", sans-serif',
+      fontSize: 36,
+      fontWeight: 700,
+      originX: 'center',
+      originY: 'center',
+      splitByGrapheme: true,
+    }),
+    'text',
+  );
 }
 
 function getObjectCenter(object: FabricObject) {
@@ -972,6 +992,28 @@ export function useFabricCanvas() {
         lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
         return `已绘制 ${objects.length} 个图形`;
+      }
+
+      if (command.intent === 'add_text') {
+        const activeObject = canvas.getActiveObject();
+        const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
+        const resolvedCommand = { ...command };
+        if (command.x === undefined && command.y === undefined) {
+          resolvedCommand.x = relativeCenter ? relativeCenter.x + 170 : canvas.getWidth() / 2;
+          resolvedCommand.y = relativeCenter ? relativeCenter.y : canvas.getHeight() / 2;
+        }
+        const object = createTextObject({
+          ...resolvedCommand,
+          color: resolvedCommand.color ?? storeColor,
+        });
+        object.set({ opacity: storeOpacity });
+        canvas.add(object);
+        canvas.setActiveObject(object);
+        canvas.requestRenderAll();
+        setSelectedCount(1);
+        lastTouchedIdsRef.current = [getObjectId(object)].filter(Boolean);
+        pushHistory();
+        return '已添加文字';
       }
 
       if (command.intent === 'draw_shape') {

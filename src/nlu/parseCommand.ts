@@ -7,6 +7,7 @@ const shapeNames: Array<[ShapeKind, RegExp]> = [
   ['triangle', /三角|三角形/],
   ['line', /线|直线/],
   ['star', /星星|星形|五角星/],
+  ['text', /文字|文本|标题/],
 ];
 
 const sizeWords: Array<[RegExp, number]> = [
@@ -100,6 +101,15 @@ function findOpacity(text: string) {
   return value > 1 ? value / 100 : value;
 }
 
+function findTextContent(rawText: string) {
+  const quoted = rawText.match(/[“"'](.+?)[”"']/);
+  if (quoted?.[1]) {
+    return quoted[1].trim();
+  }
+  const match = rawText.match(/(?:写|写上|添加|加上|输入|放上)(?:一段|一个|些)?(?:文字|文本|标题|标签)?[:：]?\s*(.+)$/);
+  return match?.[1]?.trim();
+}
+
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
   if (!text) {
@@ -115,7 +125,7 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/新建画布|新建项目|重新开始|新画布/.test(text)) {
     return { intent: 'new_canvas' };
   }
-  if (/清空|清除画布|全部删除/.test(text) && !/圆|矩形|长方形|方块|正方形|三角|线|直线|星星|星形|五角星|红|蓝|绿|黄|黑|白|紫|粉|橙|灰/.test(text)) {
+  if (/清空|清除画布|全部删除/.test(text) && !/圆|矩形|长方形|方块|正方形|三角|线|直线|星星|星形|五角星|文字|文本|标题|红|蓝|绿|黄|黑|白|紫|粉|橙|灰/.test(text)) {
     return { intent: 'clear_canvas' };
   }
   if (/隐藏帮助|关闭帮助|收起帮助/.test(text)) {
@@ -316,6 +326,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     return { intent: 'set_stroke_color', color };
   }
   const shape = findShape(text);
+  const textContent = findTextContent(rawText);
+  if (textContent && /写|写上|添加|加上|输入|放上|文字|文本|标题|标签/.test(text)) {
+    return {
+      intent: 'add_text',
+      text: textContent,
+      color,
+      ...findPosition(text),
+    };
+  }
   if (/所有|全部|批量/.test(text) && /改成|变成|换成/.test(text)) {
     const [beforeText = '', afterText = ''] = text.split(/改成|变成|换成/);
     const beforeColor = findColor(beforeText);
