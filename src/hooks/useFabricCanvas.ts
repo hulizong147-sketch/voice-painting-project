@@ -635,6 +635,25 @@ export function useFabricCanvas() {
         return '已旋转选中对象';
       }
 
+      if (command.intent === 'flip_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          if (command.axis === 'horizontal') {
+            object.set({ flipX: !object.flipX });
+          } else {
+            object.set({ flipY: !object.flipY });
+          }
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return command.axis === 'horizontal' ? '已水平翻转选中对象' : '已垂直翻转选中对象';
+      }
+
       if (command.intent === 'align_selected') {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length < 2) {
