@@ -513,6 +513,13 @@ export function useFabricCanvas() {
         return `画笔粗细已设为 ${width}`;
       }
 
+      if (command.intent === 'set_canvas_background') {
+        canvas.backgroundColor = command.color;
+        canvas.requestRenderAll();
+        pushHistory();
+        return '已修改画布背景色';
+      }
+
       if (command.intent === 'set_opacity') {
         const opacity = Math.max(0.05, Math.min(1, command.opacity));
         setOpacity(opacity);

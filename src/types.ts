@@ -35,6 +35,7 @@ export type DrawingCommand =
   | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }
   | { intent: 'set_opacity'; opacity: number }
+  | { intent: 'set_canvas_background'; color: string }
   | { intent: 'select_all' }
   | {
       intent: 'select_by_description';
