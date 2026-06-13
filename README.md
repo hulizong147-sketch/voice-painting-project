@@ -14,7 +14,7 @@ Open http://127.0.0.1:5173.
 ## Implemented
 
 - Fabric.js vector canvas with circle, rectangle, triangle, line, star, and text creation.
-- Text object editing for selected text boxes.
+- Text object editing and basic text styling for selected text boxes.
 - Chinese text and voice command parsing for basic drawing commands.
 - Sequence drawing for simple repeated layouts such as rows and columns.
 - Continuous Web Speech API listening with zh-CN recognition.
@@ -48,6 +48,8 @@ Open http://127.0.0.1:5173.
 - 添加标题 VoiceDraw
 - 写文字 “草图说明”
 - 把文字改成 “最终标题”
+- 字号 48
+- 加粗文字
 - 画一个蓝色三角形，然后画一个黄色星星
 - 换成绿色
 - 描边改成蓝色
