@@ -74,8 +74,8 @@ export type DrawingCommand =
   | { intent: 'fit_canvas' }
   | { intent: 'pan_canvas'; dx: number; dy: number }
   | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' }
-  | { intent: 'undo' }
-  | { intent: 'redo' }
+  | { intent: 'undo'; steps?: number }
+  | { intent: 'redo'; steps?: number }
   | { intent: 'new_canvas' }
   | { intent: 'clear_canvas' }
   | { intent: 'export_png' }

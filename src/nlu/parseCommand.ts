@@ -107,10 +107,10 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
 
   if (/撤销|退回|上一步/.test(text)) {
-    return { intent: 'undo' };
+    return { intent: 'undo', steps: findCount(text) };
   }
   if (/重做|恢复|下一步/.test(text)) {
-    return { intent: 'redo' };
+    return { intent: 'redo', steps: findCount(text) };
   }
   if (/新建画布|新建项目|重新开始|新画布/.test(text)) {
     return { intent: 'new_canvas' };
