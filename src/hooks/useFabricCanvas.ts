@@ -17,6 +17,16 @@ import { useDrawingStore } from '../store/drawingStore';
 
 type CanvasSnapshot = ReturnType<Canvas['toObject']>;
 type CanvasJson = ReturnType<Canvas['toObject']>;
+const persistedObjectProps = [
+  'id',
+  'semanticShape',
+  'lockMovementX',
+  'lockMovementY',
+  'lockRotation',
+  'lockScalingX',
+  'lockScalingY',
+  'hasControls',
+];
 type SemanticObject = FabricObject & {
   semanticShape?: ShapeKind;
   fill?: string;
@@ -409,7 +419,7 @@ export function useFabricCanvas() {
     if (!canvas || ignoreHistoryRef.current) {
       return;
     }
-    historyRef.current.push(canvas.toObject(['id', 'semanticShape']));
+    historyRef.current.push(canvas.toObject(persistedObjectProps));
     if (historyRef.current.length > 80) {
       historyRef.current.shift();
     }
@@ -643,6 +653,28 @@ export function useFabricCanvas() {
         lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
         return `已取消组合 ${objects.length} 个对象`;
+      }
+
+      if (command.intent === 'lock_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          object.set({
+            lockMovementX: command.locked,
+            lockMovementY: command.locked,
+            lockRotation: command.locked,
+            lockScalingX: command.locked,
+            lockScalingY: command.locked,
+            hasControls: !command.locked,
+          });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return command.locked ? '已锁定选中对象' : '已解锁选中对象';
       }
 
       if (command.intent === 'move_selected') {
@@ -1068,7 +1100,7 @@ export function useFabricCanvas() {
       if (command.intent === 'save_json') {
         downloadTextFile(
           timestampedName('voicedraw', 'json'),
-          JSON.stringify(canvas.toObject(['id', 'semanticShape']), null, 2),
+          JSON.stringify(canvas.toObject(persistedObjectProps), null, 2),
           'application/json',
         );
         return '已保存 JSON';

@@ -45,6 +45,7 @@ export type DrawingCommand =
   | { intent: 'duplicate_selected' }
   | { intent: 'group_selected' }
   | { intent: 'ungroup_selected' }
+  | { intent: 'lock_selected'; locked: boolean }
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }

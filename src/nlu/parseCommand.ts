@@ -178,6 +178,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/组合|分组|成组|合并成组/.test(text)) {
     return { intent: 'group_selected' };
   }
+  if (/解锁|取消锁定|解除锁定/.test(text)) {
+    return { intent: 'lock_selected', locked: false };
+  }
+  if (/锁定|锁住|固定/.test(text)) {
+    return { intent: 'lock_selected', locked: true };
+  }
   if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
     return { intent: 'export_svg' };
   }
