@@ -57,6 +57,8 @@ export type DrawingCommand =
   | { intent: 'group_selected' }
   | { intent: 'ungroup_selected' }
   | { intent: 'lock_selected'; locked: boolean }
+  | { intent: 'set_visibility_selected'; visible: boolean }
+  | { intent: 'show_all_objects' }
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }

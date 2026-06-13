@@ -27,6 +27,7 @@ const persistedObjectProps = [
   'lockScalingX',
   'lockScalingY',
   'hasControls',
+  'visible',
 ];
 type SemanticObject = FabricObject & {
   semanticShape?: ShapeKind;
@@ -703,6 +704,39 @@ export function useFabricCanvas() {
         lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
         pushHistory();
         return command.locked ? '已锁定选中对象' : '已解锁选中对象';
+      }
+
+      if (command.intent === 'set_visibility_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        activeObjects.forEach((object) => {
+          object.set({ visible: command.visible });
+          object.setCoords();
+        });
+        if (!command.visible) {
+          canvas.discardActiveObject();
+          setSelectedCount(0);
+        }
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return command.visible ? '已显示选中对象' : '已隐藏选中对象';
+      }
+
+      if (command.intent === 'show_all_objects') {
+        const objects = canvas.getObjects();
+        if (objects.length === 0) {
+          return '画布上还没有对象';
+        }
+        objects.forEach((object) => {
+          object.set({ visible: true });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        pushHistory();
+        return `已显示 ${objects.length} 个对象`;
       }
 
       if (command.intent === 'move_selected') {
