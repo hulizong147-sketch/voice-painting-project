@@ -133,5 +133,4 @@ Open http://127.0.0.1:5173.
 - Offline Whisper pipeline.
 - LLM-based generative drawing.
 - Advanced spatial relation understanding.
-- Templates such as smiley faces and charts.
 - Accessibility audit automation and latency benchmarking.
