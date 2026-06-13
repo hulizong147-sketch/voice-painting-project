@@ -27,6 +27,9 @@ Open http://127.0.0.1:5173.
 - Free drawing mode using Fabric PencilBrush.
 - Grid visibility toggle and status display.
 - PNG export.
+- SVG export.
+- Canvas JSON save and restore.
+- Batch color updates by simple object filters.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
@@ -42,6 +45,10 @@ Open http://127.0.0.1:5173.
 - 选中最左边的圆
 - 画一个笑脸
 - 画一个柱状图
+- 把所有红色圆改成蓝色
+- 导出 SVG
+- 保存 JSON 工程
+- 打开 JSON 工程
 - 删除选中
 - 撤销
 - 重做
@@ -63,6 +70,5 @@ Open http://127.0.0.1:5173.
 - Offline Whisper pipeline.
 - LLM-based generative drawing.
 - Advanced spatial relation understanding.
-- Batch property editing by semantic filters.
 - Templates such as smiley faces and charts.
 - Accessibility audit automation and latency benchmarking.
