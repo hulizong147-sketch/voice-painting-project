@@ -195,6 +195,140 @@ function createBarChart(centerX: number, centerY: number) {
   );
 }
 
+function createSun(centerX: number, centerY: number) {
+  const rays = Array.from({ length: 12 }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / 12;
+    const inner = 78;
+    const outer = 122;
+    return withSemanticShape(
+      new Line(
+        [
+          centerX + Math.cos(angle) * inner,
+          centerY + Math.sin(angle) * inner,
+          centerX + Math.cos(angle) * outer,
+          centerY + Math.sin(angle) * outer,
+        ],
+        {
+          stroke: '#ff9500',
+          strokeWidth: 7,
+          strokeLineCap: 'round',
+        },
+      ),
+      'line',
+    );
+  });
+  const core = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY,
+      radius: 62,
+      fill: '#ffcc00',
+      stroke: '#ff9500',
+      strokeWidth: 5,
+      originX: 'center',
+      originY: 'center',
+    }),
+    'circle',
+  );
+  return [...rays, core];
+}
+
+function createHouse(centerX: number, centerY: number) {
+  const roof = withSemanticShape(
+    new Triangle({
+      left: centerX,
+      top: centerY - 86,
+      width: 190,
+      height: 120,
+      fill: '#cf5f45',
+      stroke: '#172018',
+      strokeWidth: 4,
+      originX: 'center',
+      originY: 'center',
+    }),
+    'triangle',
+  );
+  const body = withSemanticShape(
+    new Rect({
+      left: centerX - 75,
+      top: centerY - 20,
+      width: 150,
+      height: 130,
+      fill: '#f5f0df',
+      stroke: '#172018',
+      strokeWidth: 4,
+      rx: 4,
+      ry: 4,
+    }),
+    'rect',
+  );
+  const door = withSemanticShape(
+    new Rect({
+      left: centerX - 20,
+      top: centerY + 38,
+      width: 40,
+      height: 72,
+      fill: '#166c5d',
+      stroke: '#172018',
+      strokeWidth: 3,
+      rx: 3,
+      ry: 3,
+    }),
+    'rect',
+  );
+  const windowObject = withSemanticShape(
+    new Rect({
+      left: centerX + 34,
+      top: centerY + 8,
+      width: 42,
+      height: 36,
+      fill: '#87ceeb',
+      stroke: '#172018',
+      strokeWidth: 3,
+      rx: 3,
+      ry: 3,
+    }),
+    'rect',
+  );
+  return [roof, body, door, windowObject];
+}
+
+function createFlowchart(centerX: number, centerY: number) {
+  const nodeStyle = {
+    width: 150,
+    height: 58,
+    fill: '#ffffff',
+    stroke: '#166c5d',
+    strokeWidth: 4,
+    rx: 8,
+    ry: 8,
+    originX: 'center' as const,
+    originY: 'center' as const,
+  };
+  const nodes = [-110, 0, 110].map((offset, index) =>
+    withSemanticShape(
+      new Rect({
+        ...nodeStyle,
+        left: centerX,
+        top: centerY + offset,
+        fill: ['#eef7f2', '#fff7ed', '#eef3ff'][index],
+      }),
+      'rect',
+    ),
+  );
+  const connectors = [-55, 55].map((offset) =>
+    withSemanticShape(
+      new Line([centerX, centerY + offset - 24, centerX, centerY + offset + 24], {
+        stroke: '#172018',
+        strokeWidth: 5,
+        strokeLineCap: 'round',
+      }),
+      'line',
+    ),
+  );
+  return [...nodes, ...connectors];
+}
+
 function downloadTextFile(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
   const link = document.createElement('a');
@@ -553,17 +687,22 @@ export function useFabricCanvas() {
         const center = canvas.getActiveObject()
           ? getObjectCenter(canvas.getActiveObject()!)
           : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
-        const objects =
-          command.template === 'smiley'
-            ? createSmiley(center.x, center.y)
-            : createBarChart(center.x, center.y);
+        const templateMap = {
+          smiley: { label: '笑脸模板', objects: createSmiley(center.x, center.y) },
+          bar_chart: { label: '柱状图模板', objects: createBarChart(center.x, center.y) },
+          flowchart: { label: '流程图模板', objects: createFlowchart(center.x, center.y) },
+          sun: { label: '太阳模板', objects: createSun(center.x, center.y) },
+          house: { label: '房子模板', objects: createHouse(center.x, center.y) },
+        };
+        const template = templateMap[command.template];
+        const objects = template.objects;
         objects.forEach((object) => canvas.add(object));
         canvas.discardActiveObject();
         canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
         lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
-        return command.template === 'smiley' ? '已绘制笑脸模板' : '已绘制柱状图模板';
+        return `已绘制${template.label}`;
       }
 
       if (command.intent === 'clear_canvas') {

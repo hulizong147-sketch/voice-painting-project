@@ -184,6 +184,8 @@ export function App() {
                 <span>把所有红色圆改成蓝色</span>
                 <span>导出 SVG</span>
                 <span>适应屏幕</span>
+                <span>画一个流程图</span>
+                <span>画一个房子</span>
               </div>
             ) : null}
           </section>

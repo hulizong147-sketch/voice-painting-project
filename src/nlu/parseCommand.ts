@@ -108,6 +108,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/柱状图|柱形图|条形图/.test(text)) {
     return { intent: 'draw_template', template: 'bar_chart' };
   }
+  if (/流程图|流程/.test(text)) {
+    return { intent: 'draw_template', template: 'flowchart' };
+  }
+  if (/太阳|日出|阳光/.test(text)) {
+    return { intent: 'draw_template', template: 'sun' };
+  }
+  if (/房子|房屋|小屋/.test(text)) {
+    return { intent: 'draw_template', template: 'house' };
+  }
   if (/删除选中|删掉选中|移除选中/.test(text)) {
     return { intent: 'delete_selected' };
   }
