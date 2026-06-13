@@ -123,6 +123,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
   }
+  if (/粘贴|贴上|贴出来/.test(text)) {
+    return { intent: 'paste_selected' };
+  }
+  if (/复制一份|复制出|克隆|再来一个|再复制一个|重复一个/.test(text)) {
+    return { intent: 'duplicate_selected' };
+  }
+  if (/复制|拷贝/.test(text)) {
+    return { intent: 'copy_selected' };
+  }
   if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
     return { intent: 'export_svg' };
   }

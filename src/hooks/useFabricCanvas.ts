@@ -385,6 +385,7 @@ export function useFabricCanvas() {
   const historyRef = useRef<CanvasSnapshot[]>([]);
   const redoRef = useRef<CanvasSnapshot[]>([]);
   const lastTouchedIdsRef = useRef<string[]>([]);
+  const clipboardObjectsRef = useRef<FabricObject[]>([]);
   const ignoreHistoryRef = useRef(false);
   const setSelectedCount = useDrawingStore((state) => state.setSelectedCount);
   const setColor = useDrawingStore((state) => state.setColor);
@@ -420,6 +421,19 @@ export function useFabricCanvas() {
     await canvas.loadFromJSON(snapshot);
     canvas.renderAll();
     ignoreHistoryRef.current = false;
+  }, []);
+
+  const cloneObjects = useCallback(async (objects: FabricObject[], offset = 0) => {
+    const clones = await Promise.all(objects.map((object) => object.clone(['semanticShape'])));
+    clones.forEach((clone) => {
+      clone.set({
+        left: (clone.left ?? 0) + offset,
+        top: (clone.top ?? 0) + offset,
+      });
+      withObjectId(clone);
+      clone.setCoords();
+    });
+    return clones;
   }, []);
 
   const executeCommand = useCallback(
@@ -499,6 +513,47 @@ export function useFabricCanvas() {
         setSelectedCount(0);
         pushHistory();
         return '已删除选中对象';
+      }
+
+      if (command.intent === 'copy_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        clipboardObjectsRef.current = await cloneObjects(activeObjects);
+        return `已复制 ${clipboardObjectsRef.current.length} 个对象`;
+      }
+
+      if (command.intent === 'paste_selected') {
+        if (clipboardObjectsRef.current.length === 0) {
+          return '剪贴板里还没有对象';
+        }
+        const clones = await cloneObjects(clipboardObjectsRef.current, 28);
+        clipboardObjectsRef.current = await cloneObjects(clones);
+        clones.forEach((clone) => canvas.add(clone));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(clones.length === 1 ? clones[0] : new ActiveSelection(clones, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(clones.length);
+        lastTouchedIdsRef.current = clones.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已粘贴 ${clones.length} 个对象`;
+      }
+
+      if (command.intent === 'duplicate_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中一个对象';
+        }
+        const clones = await cloneObjects(activeObjects, 28);
+        clones.forEach((clone) => canvas.add(clone));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(clones.length === 1 ? clones[0] : new ActiveSelection(clones, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(clones.length);
+        lastTouchedIdsRef.current = clones.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已复制出 ${clones.length} 个对象`;
       }
 
       if (command.intent === 'move_selected') {
@@ -861,6 +916,7 @@ export function useFabricCanvas() {
       return command.reason;
     },
     [
+      cloneObjects,
       loadSnapshot,
       pushHistory,
       setColor,
