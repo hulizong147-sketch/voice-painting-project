@@ -115,7 +115,7 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/新建画布|新建项目|重新开始|新画布/.test(text)) {
     return { intent: 'new_canvas' };
   }
-  if (/清空|清除画布|全部删除/.test(text)) {
+  if (/清空|清除画布|全部删除/.test(text) && !/圆|矩形|长方形|方块|正方形|三角|线|直线|星星|星形|五角星|红|蓝|绿|黄|黑|白|紫|粉|橙|灰/.test(text)) {
     return { intent: 'clear_canvas' };
   }
   if (/隐藏帮助|关闭帮助|收起帮助/.test(text)) {
@@ -320,6 +320,15 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
         },
       };
     }
+  }
+  if (/删除|删掉|移除|擦掉/.test(text) && (shape || color) && /所有|全部|这些|这个|这类|红|蓝|绿|黄|黑|白|紫|粉|橙|灰/.test(text)) {
+    return {
+      intent: 'delete_by_description',
+      filter: {
+        shape,
+        color,
+      },
+    };
   }
   if (/选中|选择/.test(text) && (shape || color || /最左|最右|最上|最下|左边|右边|上面|下面/.test(text))) {
     return {
