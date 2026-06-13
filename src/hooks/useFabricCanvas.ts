@@ -1016,6 +1016,21 @@ export function useFabricCanvas() {
         return '已添加文字';
       }
 
+      if (command.intent === 'update_text_selected') {
+        const textObjects = canvas.getActiveObjects().filter((object): object is Textbox => object instanceof Textbox);
+        if (textObjects.length === 0) {
+          return '请先选中一个文字对象';
+        }
+        textObjects.forEach((object) => {
+          object.set({ text: command.text });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = textObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已更新 ${textObjects.length} 个文字对象`;
+      }
+
       if (command.intent === 'draw_shape') {
         const activeObject = canvas.getActiveObject();
         const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
