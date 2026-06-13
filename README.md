@@ -31,6 +31,7 @@ Open http://127.0.0.1:5173.
 - PNG export.
 - SVG export.
 - Canvas JSON save and restore.
+- New canvas command that resets the workspace and history.
 - Batch color updates by simple object filters.
 - Correction commands that revise the most recently touched objects.
 - Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
@@ -72,6 +73,7 @@ Open http://127.0.0.1:5173.
 - 导出 SVG
 - 保存 JSON 工程
 - 打开 JSON 工程
+- 新建画布
 - 不对，改成深蓝色
 - 等一下，放大一点
 - 不是，旋转 30 度

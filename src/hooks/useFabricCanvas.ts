@@ -939,6 +939,23 @@ export function useFabricCanvas() {
         return '画布已清空';
       }
 
+      if (command.intent === 'new_canvas') {
+        canvas.getObjects().forEach((object) => canvas.remove(object));
+        canvas.discardActiveObject();
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        canvas.isDrawingMode = false;
+        canvas.requestRenderAll();
+        clipboardObjectsRef.current = [];
+        lastTouchedIdsRef.current = [];
+        redoRef.current = [];
+        historyRef.current = [];
+        setFreeDrawing(false);
+        setSelectedCount(0);
+        setZoom(1);
+        pushHistory();
+        return '已新建空白画布';
+      }
+
       if (command.intent === 'undo') {
         if (historyRef.current.length <= 1) {
           return '没有可撤销的操作';
@@ -1007,8 +1024,10 @@ export function useFabricCanvas() {
       loadSnapshot,
       pushHistory,
       setColor,
+      setFreeDrawing,
       setOpacity,
       setSnapEnabled,
+      setSelectedCount,
       setStrokeColor,
       setStrokeWidth,
       setZoom,

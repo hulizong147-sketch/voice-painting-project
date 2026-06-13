@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import {
   Download,
   FileJson,
+  FilePlus2,
   FileUp,
   Grid2X2,
   Mic,
@@ -106,6 +107,14 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'redo' }, '重做')}
         >
           <Redo2 size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="新建画布"
+          onClick={() => void runCommand({ intent: 'new_canvas' }, '新建画布')}
+        >
+          <FilePlus2 size={18} />
         </button>
         <button
           className="tool-button"
