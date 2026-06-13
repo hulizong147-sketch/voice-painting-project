@@ -13,6 +13,12 @@ export type DrawingCommand =
   | { intent: 'set_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }
   | { intent: 'select_all' }
+  | {
+      intent: 'select_by_description';
+      shape?: ShapeKind;
+      color?: string;
+      position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost';
+    }
   | { intent: 'delete_selected' }
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
@@ -21,6 +27,7 @@ export type DrawingCommand =
   | { intent: 'send_backward' }
   | { intent: 'set_free_drawing'; enabled: boolean }
   | { intent: 'toggle_grid'; enabled?: boolean }
+  | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' }
   | { intent: 'undo' }
   | { intent: 'redo' }
   | { intent: 'clear_canvas' }

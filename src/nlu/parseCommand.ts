@@ -47,6 +47,22 @@ function findPosition(text: string) {
   return positionWords.find(([pattern]) => pattern.test(text))?.[1] ?? {};
 }
 
+function findTargetPosition(text: string) {
+  if (/最左|左边/.test(text)) {
+    return 'leftmost' as const;
+  }
+  if (/最右|右边/.test(text)) {
+    return 'rightmost' as const;
+  }
+  if (/最上|上面|顶部/.test(text)) {
+    return 'topmost' as const;
+  }
+  if (/最下|下面|底部/.test(text)) {
+    return 'bottommost' as const;
+  }
+  return undefined;
+}
+
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
   if (!text) {
@@ -61,6 +77,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
+  }
+  if (/笑脸|笑脸模板/.test(text)) {
+    return { intent: 'draw_template', template: 'smiley' };
+  }
+  if (/柱状图|柱形图|条形图/.test(text)) {
+    return { intent: 'draw_template', template: 'bar_chart' };
   }
   if (/删除选中|删掉选中|移除选中/.test(text)) {
     return { intent: 'delete_selected' };
@@ -126,6 +148,14 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   const color = findColor(text);
   const shape = findShape(text);
+  if (/选中|选择/.test(text) && (shape || color || /最左|最右|最上|最下|左边|右边|上面|下面/.test(text))) {
+    return {
+      intent: 'select_by_description',
+      shape,
+      color,
+      position: findTargetPosition(text),
+    };
+  }
   if (shape && /画|绘制|放|来个|生成/.test(text)) {
     return {
       intent: 'draw_shape',
