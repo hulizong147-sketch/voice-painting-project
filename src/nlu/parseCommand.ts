@@ -172,6 +172,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/复制|拷贝/.test(text)) {
     return { intent: 'copy_selected' };
   }
+  if (/取消组合|取消分组|解除组合|解除分组|拆散|解组/.test(text)) {
+    return { intent: 'ungroup_selected' };
+  }
+  if (/组合|分组|成组|合并成组/.test(text)) {
+    return { intent: 'group_selected' };
+  }
   if (/SVG|矢量/.test(rawText) && /导出|保存|下载/.test(text)) {
     return { intent: 'export_svg' };
   }

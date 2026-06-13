@@ -4,6 +4,7 @@ import {
   Canvas,
   Circle,
   FabricObject,
+  Group,
   Line,
   PencilBrush,
   Point,
@@ -606,6 +607,42 @@ export function useFabricCanvas() {
         lastTouchedIdsRef.current = clones.map(getObjectId).filter(Boolean);
         pushHistory();
         return `已复制出 ${clones.length} 个对象`;
+      }
+
+      if (command.intent === 'group_selected') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length < 2) {
+          return '请至少选中两个对象';
+        }
+        canvas.discardActiveObject();
+        activeObjects.forEach((object) => canvas.remove(object));
+        const group = withObjectId(new Group(activeObjects));
+        canvas.add(group);
+        canvas.setActiveObject(group);
+        canvas.requestRenderAll();
+        setSelectedCount(1);
+        lastTouchedIdsRef.current = [getObjectId(group)].filter(Boolean);
+        pushHistory();
+        return `已组合 ${activeObjects.length} 个对象`;
+      }
+
+      if (command.intent === 'ungroup_selected') {
+        const activeObject = canvas.getActiveObject();
+        if (!(activeObject instanceof Group) || activeObject instanceof ActiveSelection) {
+          return '请先选中一个组合对象';
+        }
+        const objects = activeObject.removeAll();
+        canvas.remove(activeObject);
+        objects.forEach((object) => {
+          canvas.add(object);
+          object.setCoords();
+        });
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        setSelectedCount(objects.length);
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已取消组合 ${objects.length} 个对象`;
       }
 
       if (command.intent === 'move_selected') {
