@@ -88,6 +88,8 @@ export type DrawingCommand =
     }
   | { intent: 'bring_forward' }
   | { intent: 'send_backward' }
+  | { intent: 'bring_to_front' }
+  | { intent: 'send_to_back' }
   | { intent: 'set_free_drawing'; enabled: boolean }
   | { intent: 'toggle_grid'; enabled?: boolean }
   | { intent: 'toggle_snap'; enabled?: boolean }
