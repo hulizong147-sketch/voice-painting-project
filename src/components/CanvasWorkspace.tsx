@@ -1,16 +1,19 @@
 import { useEffect } from 'react';
 import {
   Download,
+  ChartColumn,
   FileJson,
   FilePlus2,
   FileUp,
   FolderOpen,
   Grid2X2,
+  House,
   Mic,
   MicOff,
   Redo2,
   RotateCcw,
   Shapes,
+  Smile,
   Trash2,
   ZoomIn,
   ZoomOut,
@@ -61,6 +64,30 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'draw_shape', shape: 'circle' }, '画一个圆')}
         >
           <Shapes size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="笑脸模板"
+          onClick={() => void runCommand({ intent: 'draw_template', template: 'smiley' }, '画一个笑脸')}
+        >
+          <Smile size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="柱状图模板"
+          onClick={() => void runCommand({ intent: 'draw_template', template: 'bar_chart' }, '画一个柱状图')}
+        >
+          <ChartColumn size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="房子模板"
+          onClick={() => void runCommand({ intent: 'draw_template', template: 'house' }, '画一个房子')}
+        >
+          <House size={18} />
         </button>
         <button
           className="tool-button"
