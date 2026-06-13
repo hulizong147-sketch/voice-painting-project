@@ -151,6 +151,44 @@ h1 {
   background: var(--brand);
 }
 
+.toolbar-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #c4ccbd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.color-swatch,
+.stroke-width-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.color-swatch span {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(23, 32, 24, 0.24);
+  border-radius: 50%;
+}
+
+.color-swatch.active,
+.stroke-width-button.active {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: #eef3ea;
+}
+
 .canvas-stage {
   position: relative;
   min-height: 0;

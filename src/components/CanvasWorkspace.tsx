@@ -31,6 +31,16 @@ import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import type { DrawingCommand } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
+const toolbarColors = [
+  { label: '红色', value: '#cf5f45' },
+  { label: '蓝色', value: '#316dca' },
+  { label: '绿色', value: '#3f8f5f' },
+  { label: '黄色', value: '#e3b341' },
+  { label: '黑色', value: '#172018' },
+];
+
+const toolbarStrokeWidths = [1, 3, 6];
+
 interface CanvasWorkspaceProps {
   onCommand: (command: DrawingCommand, text: string, result: string) => void;
   onToggleListening: () => void;
@@ -48,6 +58,8 @@ export function CanvasWorkspace({
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
+  const currentColor = useDrawingStore((state) => state.currentColor);
+  const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
@@ -76,6 +88,32 @@ export function CanvasWorkspace({
         >
           <Shapes size={18} />
         </button>
+        <div className="toolbar-control-group" aria-label="快速颜色">
+          {toolbarColors.map((color) => (
+            <button
+              className={currentColor === color.value ? 'color-swatch active' : 'color-swatch'}
+              key={color.value}
+              type="button"
+              title={`切换为${color.label}`}
+              onClick={() => void runCommand({ intent: 'set_color', color: color.value }, `换成${color.label}`)}
+            >
+              <span style={{ background: color.value }} />
+            </button>
+          ))}
+        </div>
+        <div className="toolbar-control-group" aria-label="画笔粗细">
+          {toolbarStrokeWidths.map((width) => (
+            <button
+              className={currentStrokeWidth === width ? 'stroke-width-button active' : 'stroke-width-button'}
+              key={width}
+              type="button"
+              title={`画笔 ${width}px`}
+              onClick={() => void runCommand({ intent: 'set_stroke_width', width }, `画笔 ${width}`)}
+            >
+              {width}
+            </button>
+          ))}
+        </div>
         <button
           className="tool-button"
           type="button"

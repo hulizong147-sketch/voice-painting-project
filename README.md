@@ -20,7 +20,7 @@ Open http://127.0.0.1:5173.
 - Continuous Web Speech API listening with zh-CN recognition.
 - SpeechSynthesis feedback after command execution.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
-- Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode.
+- Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color and stroke width.
 - Single-step and multi-step undo/redo based on canvas snapshots.
 - Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back, with toolbar shortcuts for common selection, grouping, and locking actions.
 - Natural language object selection by color, shape, and simple positional words.
