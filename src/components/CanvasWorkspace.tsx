@@ -10,6 +10,7 @@ import {
   House,
   Mic,
   MicOff,
+  Pencil,
   Redo2,
   RotateCcw,
   Shapes,
@@ -37,6 +38,7 @@ export function CanvasWorkspace({
   const isListening = useDrawingStore((state) => state.isListening);
   const showGrid = useDrawingStore((state) => state.showGrid);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
+  const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
@@ -128,6 +130,14 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'toggle_snap' }, '切换吸附')}
         >
           <Grid2X2 size={18} />
+        </button>
+        <button
+          className={freeDrawing ? 'tool-button active' : 'tool-button'}
+          type="button"
+          title={freeDrawing ? '停止自由绘制' : '开始自由绘制'}
+          onClick={() => void runCommand({ intent: 'set_free_drawing', enabled: !freeDrawing }, freeDrawing ? '停笔' : '开始画')}
+        >
+          <Pencil size={18} />
         </button>
         <button
           className="tool-button"
