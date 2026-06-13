@@ -335,6 +335,22 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     return { intent: 'set_stroke_color', color };
   }
   const shape = findShape(text);
+  const textSizeMatch = text.match(/(?:文字|文本|标题|字号|字体|字).*(\d+)/);
+  if (/文字|文本|标题|字号|字体/.test(text) && textSizeMatch) {
+    return { intent: 'set_text_size', size: Number(textSizeMatch[1]) };
+  }
+  if (/文字|文本|标题|字号|字体/.test(text) && /变大|放大|大一点/.test(text)) {
+    return { intent: 'set_text_size', size: 48 };
+  }
+  if (/文字|文本|标题|字号|字体/.test(text) && /变小|缩小|小一点/.test(text)) {
+    return { intent: 'set_text_size', size: 24 };
+  }
+  if (/取消加粗|不加粗|常规字重|普通字重/.test(text)) {
+    return { intent: 'set_text_weight', bold: false };
+  }
+  if (/加粗|粗体|黑体/.test(text)) {
+    return { intent: 'set_text_weight', bold: true };
+  }
   const updatedTextContent = findUpdatedTextContent(rawText);
   if (updatedTextContent && /文字|文本|标题|标签|内容|改成|改为|修改为|替换为|换成/.test(text)) {
     return {

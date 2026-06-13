@@ -29,6 +29,8 @@ export type DrawingCommand =
       y?: number;
     }
   | { intent: 'update_text_selected'; text: string }
+  | { intent: 'set_text_size'; size: number }
+  | { intent: 'set_text_weight'; bold: boolean }
   | { intent: 'set_color'; color: string }
   | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }

@@ -1031,6 +1031,37 @@ export function useFabricCanvas() {
         return `已更新 ${textObjects.length} 个文字对象`;
       }
 
+      if (command.intent === 'set_text_size') {
+        const textObjects = canvas.getActiveObjects().filter((object): object is Textbox => object instanceof Textbox);
+        if (textObjects.length === 0) {
+          return '请先选中一个文字对象';
+        }
+        const size = Math.max(8, Math.min(160, command.size));
+        textObjects.forEach((object) => {
+          object.set({ fontSize: size });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = textObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已将文字字号设为 ${size}`;
+      }
+
+      if (command.intent === 'set_text_weight') {
+        const textObjects = canvas.getActiveObjects().filter((object): object is Textbox => object instanceof Textbox);
+        if (textObjects.length === 0) {
+          return '请先选中一个文字对象';
+        }
+        textObjects.forEach((object) => {
+          object.set({ fontWeight: command.bold ? 700 : 400 });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = textObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return command.bold ? '已加粗选中文字' : '已取消文字加粗';
+      }
+
       if (command.intent === 'draw_shape') {
         const activeObject = canvas.getActiveObject();
         const relativeCenter = activeObject ? getObjectCenter(activeObject) : null;
