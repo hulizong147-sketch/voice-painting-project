@@ -179,6 +179,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/删除选中|删掉选中|移除选中/.test(text)) {
     return { intent: 'delete_selected' };
   }
+  if (/反选|选择反向|反向选择/.test(text)) {
+    return { intent: 'invert_selection' };
+  }
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
   }

@@ -548,6 +548,26 @@ export function useFabricCanvas() {
         return '已选中全部对象';
       }
 
+      if (command.intent === 'invert_selection') {
+        const selectedIds = new Set(canvas.getActiveObjects().map(getObjectId).filter(Boolean));
+        const matches = canvas.getObjects().filter((object) => object.visible !== false && !selectedIds.has(getObjectId(object)));
+        canvas.discardActiveObject();
+        if (matches.length === 0) {
+          canvas.requestRenderAll();
+          setSelectedCount(0);
+          return '没有可反选的对象';
+        }
+        if (matches.length === 1) {
+          canvas.setActiveObject(matches[0]);
+        } else {
+          canvas.setActiveObject(new ActiveSelection(matches, { canvas }));
+        }
+        canvas.requestRenderAll();
+        setSelectedCount(matches.length);
+        lastTouchedIdsRef.current = matches.map(getObjectId).filter(Boolean);
+        return `已反选 ${matches.length} 个对象`;
+      }
+
       if (command.intent === 'select_by_visibility') {
         const matches = canvas.getObjects().filter((object) => object.visible === command.visible);
         canvas.discardActiveObject();
