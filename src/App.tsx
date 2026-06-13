@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCw } from 'lucide-react';
+import { Copy, RotateCw } from 'lucide-react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import type { CommandHistoryItem, DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
@@ -143,6 +143,15 @@ export function App() {
     };
     input.click();
   }, [setCommands, setFeedback]);
+
+  const copyCommandText = useCallback(async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setFeedback('已复制命令文本');
+    } catch {
+      setFeedback('复制命令文本失败');
+    }
+  }, [setFeedback]);
 
   const speech = useSpeechRecognition((text) => {
     void runTextCommand(text);
@@ -325,14 +334,24 @@ export function App() {
                 <article className="command-item" key={item.id}>
                   <div className="command-item-header">
                     <time>{new Date(item.createdAt).toLocaleTimeString()}</time>
-                    <button
-                      aria-label={`重新执行：${item.text}`}
-                      title="重新执行"
-                      type="button"
-                      onClick={() => void runTextCommand(item.text)}
-                    >
-                      <RotateCw size={14} />
-                    </button>
+                    <div className="command-item-actions">
+                      <button
+                        aria-label={`复制命令：${item.text}`}
+                        title="复制命令"
+                        type="button"
+                        onClick={() => void copyCommandText(item.text)}
+                      >
+                        <Copy size={14} />
+                      </button>
+                      <button
+                        aria-label={`重新执行：${item.text}`}
+                        title="重新执行"
+                        type="button"
+                        onClick={() => void runTextCommand(item.text)}
+                      >
+                        <RotateCw size={14} />
+                      </button>
+                    </div>
                   </div>
                   <strong>{item.text}</strong>
                   <p>{item.result}</p>

@@ -385,7 +385,13 @@ h1 {
   gap: 8px;
 }
 
-.command-item-header button {
+.command-item-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.command-item-actions button {
   display: grid;
   width: 26px;
   height: 26px;
@@ -397,7 +403,7 @@ h1 {
   color: var(--ink-muted);
 }
 
-.command-item-header button:hover {
+.command-item-actions button:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
