@@ -32,6 +32,7 @@ Open http://127.0.0.1:5173.
 - Batch color updates by simple object filters.
 - Correction commands that revise the most recently touched objects.
 - Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
+- Listening mode switch between continuous recognition and push-to-talk.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
@@ -59,6 +60,7 @@ Open http://127.0.0.1:5173.
 - 适应屏幕
 - 开启吸附
 - 画布向右移动
+- 切换到按住说话，然后按住空格发出命令
 - 删除选中
 - 撤销
 - 重做
