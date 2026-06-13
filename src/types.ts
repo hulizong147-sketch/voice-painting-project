@@ -51,7 +51,7 @@ export type DrawingCommand =
   | { intent: 'zoom_canvas'; factor: number }
   | { intent: 'fit_canvas' }
   | { intent: 'pan_canvas'; dx: number; dy: number }
-  | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' }
+  | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' }
   | { intent: 'undo' }
   | { intent: 'redo' }
   | { intent: 'clear_canvas' }

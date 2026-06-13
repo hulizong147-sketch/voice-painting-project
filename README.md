@@ -24,6 +24,7 @@ Open http://127.0.0.1:5173.
 - Natural language object selection by color, shape, and simple positional words.
 - Relative drawing near the current selection.
 - Built-in smiley and bar chart templates.
+- Additional templates for flowcharts, suns, and houses.
 - Free drawing mode using Fabric PencilBrush.
 - Grid visibility toggle and status display.
 - PNG export.
@@ -49,6 +50,9 @@ Open http://127.0.0.1:5173.
 - 选中最左边的圆
 - 画一个笑脸
 - 画一个柱状图
+- 画一个流程图
+- 画一个太阳
+- 画一个房子
 - 把所有红色圆改成蓝色
 - 导出 SVG
 - 保存 JSON 工程
