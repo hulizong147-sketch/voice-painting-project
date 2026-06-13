@@ -78,6 +78,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/清空|清除画布|全部删除/.test(text)) {
     return { intent: 'clear_canvas' };
   }
+  if (/隐藏帮助|关闭帮助|收起帮助/.test(text)) {
+    return { intent: 'show_help', visible: false };
+  }
+  if (/帮助|显示命令|命令列表|怎么用|可以说什么/.test(text)) {
+    return { intent: 'show_help', visible: true };
+  }
   if (/不是|不对|等一下|等等|改成|换成|修正/.test(text) && !/所有|全部|批量/.test(text)) {
     const correctionColor = findColor(text);
     if (correctionColor) {

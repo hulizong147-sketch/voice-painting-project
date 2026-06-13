@@ -175,7 +175,7 @@ h1 {
 
 .side-panel {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto auto auto 1fr;
   gap: 18px;
   min-height: 0;
   padding: 18px;
@@ -212,6 +212,44 @@ h1 {
 .mode-toggle button.active {
   color: #fff;
   background: var(--brand);
+}
+
+.help-panel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.help-panel > button {
+  border: 0;
+  padding: 0;
+  color: #172018;
+  font-weight: 900;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.help-panel.collapsed {
+  padding: 10px 12px;
+}
+
+.help-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.help-grid span {
+  min-height: 28px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  background: #f4f7f1;
 }
 
 .text-command input {
