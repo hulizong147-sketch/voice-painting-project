@@ -1,6 +1,9 @@
+import { useCallback, useRef, useState } from 'react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import type { DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
+import { parseCommands } from './nlu/parseCommand';
+import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 
 export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
@@ -13,8 +16,10 @@ export function App() {
   const setListening = useDrawingStore((state) => state.setListening);
   const addCommand = useDrawingStore((state) => state.addCommand);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
+  const [typedCommand, setTypedCommand] = useState('');
+  const executeRef = useRef<(command: DrawingCommand) => Promise<string>>();
 
-  const handleCommand = (_command: DrawingCommand, text: string, result: string) => {
+  const handleCommand = useCallback((_command: DrawingCommand, text: string, result: string) => {
     addCommand({
       id: crypto.randomUUID(),
       text,
@@ -23,7 +28,31 @@ export function App() {
       ok: !_command.intent.includes('unknown'),
     });
     setFeedback(result);
-  };
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(result));
+    }
+  }, [addCommand, setFeedback]);
+
+  const runTextCommand = useCallback(
+    async (text: string) => {
+      const execute = executeRef.current;
+      if (!execute) {
+        setFeedback('画布尚未准备好');
+        return;
+      }
+      const parsed = parseCommands(text);
+      for (const item of parsed) {
+        const result = await execute(item.command);
+        handleCommand(item.command, item.text, result);
+      }
+    },
+    [handleCommand, setFeedback],
+  );
+
+  const speech = useSpeechRecognition((text) => {
+    void runTextCommand(text);
+  });
 
   return (
     <main className="app-shell">
@@ -44,7 +73,17 @@ export function App() {
       <section className="workspace">
         <CanvasWorkspace
           onCommand={handleCommand}
-          onToggleListening={() => setListening(!isListening)}
+          onExecutorReady={(execute) => {
+            executeRef.current = execute;
+          }}
+          onToggleListening={() => {
+            if (isListening) {
+              speech.stop();
+            } else {
+              speech.start();
+            }
+            setListening(!isListening);
+          }}
         />
         <aside className="side-panel">
           <div className={isListening ? 'listening-card active' : 'listening-card'}>
@@ -54,6 +93,22 @@ export function App() {
               <p>{transcript || feedback}</p>
             </div>
           </div>
+          <form
+            className="text-command"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runTextCommand(typedCommand);
+              setTypedCommand('');
+            }}
+          >
+            <input
+              aria-label="输入文本命令"
+              placeholder="输入：画一个蓝色三角形"
+              value={typedCommand}
+              onChange={(event) => setTypedCommand(event.target.value)}
+            />
+            <button type="submit">执行</button>
+          </form>
           <div className="command-list">
             <h2>命令历史</h2>
             {commands.length === 0 ? (

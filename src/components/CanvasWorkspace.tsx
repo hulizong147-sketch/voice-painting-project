@@ -1,4 +1,5 @@
-import { Download, Mic, MicOff, Redo2, RotateCcw, Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { Download, Mic, MicOff, Redo2, RotateCcw, Shapes, Trash2 } from 'lucide-react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import type { DrawingCommand } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
@@ -6,15 +7,24 @@ import { useDrawingStore } from '../store/drawingStore';
 interface CanvasWorkspaceProps {
   onCommand: (command: DrawingCommand, text: string, result: string) => void;
   onToggleListening: () => void;
+  onExecutorReady: (execute: (command: DrawingCommand) => Promise<string>) => void;
 }
 
-export function CanvasWorkspace({ onCommand, onToggleListening }: CanvasWorkspaceProps) {
+export function CanvasWorkspace({
+  onCommand,
+  onToggleListening,
+  onExecutorReady,
+}: CanvasWorkspaceProps) {
   const { canvasElementRef, executeCommand } = useFabricCanvas();
   const isListening = useDrawingStore((state) => state.isListening);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
   };
+
+  useEffect(() => {
+    onExecutorReady(executeCommand);
+  }, [executeCommand, onExecutorReady]);
 
   return (
     <section className="canvas-area">
@@ -26,6 +36,14 @@ export function CanvasWorkspace({ onCommand, onToggleListening }: CanvasWorkspac
           onClick={onToggleListening}
         >
           {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="画圆"
+          onClick={() => void runCommand({ intent: 'draw_shape', shape: 'circle' }, '画一个圆')}
+        >
+          <Shapes size={18} />
         </button>
         <button
           className="tool-button"
