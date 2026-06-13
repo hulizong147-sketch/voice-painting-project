@@ -548,6 +548,25 @@ export function useFabricCanvas() {
         return '已选中全部对象';
       }
 
+      if (command.intent === 'select_by_visibility') {
+        const matches = canvas.getObjects().filter((object) => object.visible === command.visible);
+        canvas.discardActiveObject();
+        if (matches.length === 0) {
+          canvas.requestRenderAll();
+          setSelectedCount(0);
+          return command.visible ? '没有找到可见对象' : '没有找到隐藏对象';
+        }
+        if (matches.length === 1) {
+          canvas.setActiveObject(matches[0]);
+        } else {
+          canvas.setActiveObject(new ActiveSelection(matches, { canvas }));
+        }
+        canvas.requestRenderAll();
+        setSelectedCount(matches.length);
+        lastTouchedIdsRef.current = matches.map(getObjectId).filter(Boolean);
+        return command.visible ? `已选中 ${matches.length} 个可见对象` : `已选中 ${matches.length} 个隐藏对象`;
+      }
+
       if (command.intent === 'select_by_description') {
         const candidates = canvas.getObjects().filter((object) => {
           const semanticObject = object as SemanticObject;

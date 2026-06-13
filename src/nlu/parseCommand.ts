@@ -182,6 +182,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/全选|选中全部|选择全部/.test(text)) {
     return { intent: 'select_all' };
   }
+  if (/选中|选择/.test(text) && /可见对象|可见图形|显示对象|显示图形/.test(text)) {
+    return { intent: 'select_by_visibility', visible: true };
+  }
+  if (/选中|选择/.test(text) && /隐藏对象|隐藏图形/.test(text)) {
+    return { intent: 'select_by_visibility', visible: false };
+  }
   if (/粘贴|贴上|贴出来/.test(text)) {
     return { intent: 'paste_selected' };
   }
