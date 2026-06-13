@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCw } from 'lucide-react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import type { CommandHistoryItem, DrawingCommand } from './types';
@@ -62,7 +62,18 @@ export function App() {
   const clearCommands = useDrawingStore((state) => state.clearCommands);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
   const [typedCommand, setTypedCommand] = useState('');
+  const [commandHistoryQuery, setCommandHistoryQuery] = useState('');
   const executeRef = useRef<(command: DrawingCommand) => Promise<string>>();
+  const visibleCommands = useMemo(() => {
+    const query = commandHistoryQuery.trim().toLowerCase();
+    if (!query) {
+      return commands;
+    }
+    return commands.filter((item) => (
+      item.text.toLowerCase().includes(query) ||
+      item.result.toLowerCase().includes(query)
+    ));
+  }, [commandHistoryQuery, commands]);
 
   const handleCommand = useCallback((_command: DrawingCommand, text: string, result: string) => {
     if (_command.intent === 'show_help') {
@@ -297,10 +308,20 @@ export function App() {
                 </button>
               </div>
             </div>
+            <input
+              className="command-search"
+              aria-label="筛选命令历史"
+              placeholder="筛选历史"
+              value={commandHistoryQuery}
+              onChange={(event) => setCommandHistoryQuery(event.target.value)}
+              disabled={commands.length === 0}
+            />
             {commands.length === 0 ? (
               <p className="empty-copy">还没有命令。</p>
+            ) : visibleCommands.length === 0 ? (
+              <p className="empty-copy">没有匹配的命令历史。</p>
             ) : (
-              commands.map((item) => (
+              visibleCommands.map((item) => (
                 <article className="command-item" key={item.id}>
                   <div className="command-item-header">
                     <time>{new Date(item.createdAt).toLocaleTimeString()}</time>

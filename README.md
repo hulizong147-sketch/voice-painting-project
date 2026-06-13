@@ -40,7 +40,7 @@ Open http://127.0.0.1:5173.
 - Canvas size commands for exact dimensions and common presets.
 - Listening mode switch between continuous recognition and push-to-talk.
 - In-app command help panel with voice/text commands for showing or hiding help.
-- Command history items can be replayed, imported, exported, or cleared from the side panel.
+- Command history items can be replayed, filtered, imported, exported, or cleared from the side panel.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
