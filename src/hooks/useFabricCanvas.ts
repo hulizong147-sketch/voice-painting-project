@@ -548,6 +548,13 @@ export function useFabricCanvas() {
         return '已选中全部对象';
       }
 
+      if (command.intent === 'clear_selection') {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        setSelectedCount(0);
+        return '已取消选择';
+      }
+
       if (command.intent === 'invert_selection') {
         const selectedIds = new Set(canvas.getActiveObjects().map(getObjectId).filter(Boolean));
         const matches = canvas.getObjects().filter((object) => object.visible !== false && !selectedIds.has(getObjectId(object)));
