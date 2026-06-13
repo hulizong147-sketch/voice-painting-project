@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 import {
   Download,
   ChartColumn,
+  ClipboardPaste,
+  Copy,
+  Eraser,
   FileJson,
   FilePlus2,
   FileUp,
@@ -13,6 +16,7 @@ import {
   Pencil,
   Redo2,
   RotateCcw,
+  Scan,
   Shapes,
   Smile,
   Trash2,
@@ -39,6 +43,7 @@ export function CanvasWorkspace({
   const showGrid = useDrawingStore((state) => state.showGrid);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
+  const selectedCount = useDrawingStore((state) => state.selectedCount);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
     onCommand(command, text, result);
@@ -138,6 +143,40 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'set_free_drawing', enabled: !freeDrawing }, freeDrawing ? '停笔' : '开始画')}
         >
           <Pencil size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="选择全部"
+          onClick={() => void runCommand({ intent: 'select_all' }, '选择全部')}
+        >
+          <Scan size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="复制选中"
+          disabled={selectedCount === 0}
+          onClick={() => void runCommand({ intent: 'copy_selected' }, '复制选中')}
+        >
+          <Copy size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="粘贴"
+          onClick={() => void runCommand({ intent: 'paste_selected' }, '粘贴')}
+        >
+          <ClipboardPaste size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="删除选中"
+          disabled={selectedCount === 0}
+          onClick={() => void runCommand({ intent: 'delete_selected' }, '删除选中')}
+        >
+          <Eraser size={18} />
         </button>
         <button
           className="tool-button"
