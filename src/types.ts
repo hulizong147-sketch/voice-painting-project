@@ -20,6 +20,9 @@ export type DrawingCommand =
       position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost';
     }
   | { intent: 'delete_selected' }
+  | { intent: 'copy_selected' }
+  | { intent: 'paste_selected' }
+  | { intent: 'duplicate_selected' }
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
