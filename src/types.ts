@@ -43,6 +43,8 @@ export type DrawingCommand =
   | { intent: 'copy_selected' }
   | { intent: 'paste_selected' }
   | { intent: 'duplicate_selected' }
+  | { intent: 'group_selected' }
+  | { intent: 'ungroup_selected' }
   | { intent: 'move_selected'; dx: number; dy: number }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }

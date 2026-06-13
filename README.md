@@ -21,7 +21,7 @@ Open http://127.0.0.1:5173.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
 - Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode.
 - Single-step and multi-step undo/redo based on canvas snapshots.
-- Object operations: select all, delete selected, delete by description, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward.
+- Object operations: select all, delete selected, delete by description, group, ungroup, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward.
 - Natural language object selection by color, shape, and simple positional words.
 - Relative drawing near the current selection.
 - Built-in smiley and bar chart templates.
@@ -58,6 +58,8 @@ Open http://127.0.0.1:5173.
 - 复制选中
 - 粘贴
 - 复制一份
+- 组合
+- 取消组合
 - 左对齐
 - 水平居中
 - 横向均匀分布
