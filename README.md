@@ -20,7 +20,7 @@ Open http://127.0.0.1:5173.
 - SpeechSynthesis feedback after command execution.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
 - Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode.
-- Undo and redo based on canvas snapshots.
+- Single-step and multi-step undo/redo based on canvas snapshots.
 - Object operations: select all, delete selected, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward.
 - Natural language object selection by color, shape, and simple positional words.
 - Relative drawing near the current selection.
@@ -87,7 +87,9 @@ Open http://127.0.0.1:5173.
 - 隐藏帮助
 - 删除选中
 - 撤销
+- 撤销 3 步
 - 重做
+- 重做 2 步
 - 开始画
 - 停笔
 - 隐藏网格

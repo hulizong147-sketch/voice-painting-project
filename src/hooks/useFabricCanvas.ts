@@ -960,25 +960,38 @@ export function useFabricCanvas() {
         if (historyRef.current.length <= 1) {
           return '没有可撤销的操作';
         }
-        const current = historyRef.current.pop();
-        if (current) {
-          redoRef.current.push(current);
+        const requestedSteps = Math.max(1, Math.min(20, command.steps ?? 1));
+        const steps = Math.min(requestedSteps, historyRef.current.length - 1);
+        for (let index = 0; index < steps; index += 1) {
+          const current = historyRef.current.pop();
+          if (current) {
+            redoRef.current.push(current);
+          }
         }
         const previous = historyRef.current[historyRef.current.length - 1];
         if (previous) {
           await loadSnapshot(previous);
         }
-        return '已撤销';
+        return steps === 1 ? '已撤销' : `已撤销 ${steps} 步`;
       }
 
       if (command.intent === 'redo') {
-        const snapshot = redoRef.current.pop();
-        if (!snapshot) {
+        if (redoRef.current.length === 0) {
           return '没有可重做的操作';
         }
-        await loadSnapshot(snapshot);
-        historyRef.current.push(snapshot);
-        return '已重做';
+        const requestedSteps = Math.max(1, Math.min(20, command.steps ?? 1));
+        const steps = Math.min(requestedSteps, redoRef.current.length);
+        let snapshot: CanvasSnapshot | undefined;
+        for (let index = 0; index < steps; index += 1) {
+          snapshot = redoRef.current.pop();
+          if (snapshot) {
+            historyRef.current.push(snapshot);
+          }
+        }
+        if (snapshot) {
+          await loadSnapshot(snapshot);
+        }
+        return steps === 1 ? '已重做' : `已重做 ${steps} 步`;
       }
 
       if (command.intent === 'export_png') {
