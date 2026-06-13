@@ -13,7 +13,7 @@ Open http://127.0.0.1:5173.
 
 ## Implemented
 
-- Fabric.js vector canvas with circle, rectangle, triangle, line, and star creation.
+- Fabric.js vector canvas with circle, rectangle, triangle, line, star, and text creation.
 - Chinese text and voice command parsing for basic drawing commands.
 - Sequence drawing for simple repeated layouts such as rows and columns.
 - Continuous Web Speech API listening with zh-CN recognition.
@@ -44,6 +44,8 @@ Open http://127.0.0.1:5173.
 - 画一个红色的圆
 - 画 5 个红色圆排成一排
 - 画三个蓝色矩形排成一列
+- 添加标题 VoiceDraw
+- 写文字 “草图说明”
 - 画一个蓝色三角形，然后画一个黄色星星
 - 换成绿色
 - 描边改成蓝色

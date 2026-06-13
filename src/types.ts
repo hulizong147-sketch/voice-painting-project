@@ -1,4 +1,4 @@
-export type ShapeKind = 'circle' | 'rect' | 'triangle' | 'line' | 'star';
+export type ShapeKind = 'circle' | 'rect' | 'triangle' | 'line' | 'star' | 'text';
 
 export type DrawingCommand =
   | {
@@ -18,6 +18,13 @@ export type DrawingCommand =
       color?: string;
       strokeColor?: string;
       size?: number;
+      x?: number;
+      y?: number;
+    }
+  | {
+      intent: 'add_text';
+      text: string;
+      color?: string;
       x?: number;
       y?: number;
     }
