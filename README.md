@@ -38,7 +38,7 @@ BAIDU_TTS_AUE=3
 - Baidu speech recognition through a local backend, with browser Web Speech fallback.
 - Baidu text-to-speech feedback after command execution, with SpeechSynthesis fallback.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
-- Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color and stroke width.
+- Current drawing context for fill color, stroke color, stroke width, opacity, drawing style, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color, stroke width, and drawing style.
 - Single-step and multi-step undo/redo based on canvas snapshots.
 - Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back, with toolbar shortcuts for common selection, grouping, and locking actions.
 - Natural language object selection by color, shape, and simple positional words.
@@ -78,6 +78,9 @@ BAIDU_TTS_AUE=3
 - 画笔粗细 8
 - 透明度 50%
 - 半透明
+- 切换成二次元画风
+- 以后用水墨画风
+- 设置为简笔画风
 - 向右移动一点
 - 放大两倍
 - 旋转 45 度

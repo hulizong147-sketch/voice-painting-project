@@ -1,5 +1,7 @@
 export type ShapeKind = 'circle' | 'rect' | 'triangle' | 'line' | 'star' | 'text';
 
+export type DrawingStyleId = 'default' | 'anime' | 'ink' | 'simple';
+
 export type DrawingCommand =
   | {
       intent: 'draw_shape';
@@ -35,6 +37,7 @@ export type DrawingCommand =
   | { intent: 'set_stroke_color'; color: string }
   | { intent: 'set_stroke_width'; width: number }
   | { intent: 'set_opacity'; opacity: number }
+  | { intent: 'set_drawing_style'; style: DrawingStyleId }
   | { intent: 'set_canvas_background'; color: string }
   | { intent: 'select_all' }
   | { intent: 'clear_selection' }
@@ -138,6 +141,7 @@ export interface DrawingContextState {
   currentStrokeColor: string;
   currentStrokeWidth: number;
   currentOpacity: number;
+  currentDrawingStyle: DrawingStyleId;
   selectedCount: number;
   showGrid: boolean;
   snapEnabled: boolean;

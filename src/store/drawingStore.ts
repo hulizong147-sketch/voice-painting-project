@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import type { CommandHistoryItem, DrawingContextState } from '../types';
+import { drawingStyleMap } from '../drawingStyles';
+import type { CommandHistoryItem, DrawingContextState, DrawingStyleId } from '../types';
 
 interface DrawingStore extends DrawingContextState {
   setColor: (color: string) => void;
   setStrokeColor: (color: string) => void;
   setStrokeWidth: (width: number) => void;
   setOpacity: (opacity: number) => void;
+  setDrawingStyle: (style: DrawingStyleId) => void;
   setSelectedCount: (selectedCount: number) => void;
   setShowGrid: (showGrid: boolean) => void;
   setSnapEnabled: (snapEnabled: boolean) => void;
@@ -26,6 +28,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   currentStrokeColor: '#172018',
   currentStrokeWidth: 3,
   currentOpacity: 1,
+  currentDrawingStyle: 'default',
   selectedCount: 0,
   showGrid: true,
   snapEnabled: false,
@@ -41,6 +44,16 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   setStrokeColor: (color) => set({ currentStrokeColor: color }),
   setStrokeWidth: (width) => set({ currentStrokeWidth: width }),
   setOpacity: (opacity) => set({ currentOpacity: opacity }),
+  setDrawingStyle: (style) => {
+    const preset = drawingStyleMap[style];
+    set({
+      currentDrawingStyle: style,
+      currentColor: preset.fill,
+      currentStrokeColor: preset.stroke,
+      currentStrokeWidth: preset.strokeWidth,
+      currentOpacity: preset.opacity,
+    });
+  },
   setSelectedCount: (selectedCount) => set({ selectedCount }),
   setShowGrid: (showGrid) => set({ showGrid }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),

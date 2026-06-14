@@ -28,6 +28,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
+import { drawingStyleOptions } from '../drawingStyles';
 import type { DrawingCommand } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
@@ -59,6 +60,7 @@ export function CanvasWorkspace({
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
   const currentColor = useDrawingStore((state) => state.currentColor);
+  const currentDrawingStyle = useDrawingStore((state) => state.currentDrawingStyle);
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const runCommand = async (command: DrawingCommand, text: string) => {
     const result = await executeCommand(command);
@@ -111,6 +113,19 @@ export function CanvasWorkspace({
               onClick={() => void runCommand({ intent: 'set_stroke_width', width }, `画笔 ${width}`)}
             >
               {width}
+            </button>
+          ))}
+        </div>
+        <div className="style-control-group" aria-label="画风">
+          {drawingStyleOptions.map((style) => (
+            <button
+              className={currentDrawingStyle === style.id ? 'style-button active' : 'style-button'}
+              key={style.id}
+              type="button"
+              title={`切换到${style.label}画风`}
+              onClick={() => void runCommand({ intent: 'set_drawing_style', style: style.id }, `切换到${style.label}画风`)}
+            >
+              {style.label}
             </button>
           ))}
         </div>

@@ -14,6 +14,7 @@ import {
   Textbox,
   Triangle,
 } from 'fabric';
+import { drawingStyleMap } from '../drawingStyles';
 import type { DrawingCommand, ShapeKind } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
@@ -880,6 +881,7 @@ export function useFabricCanvas() {
   const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
   const setShowGrid = useDrawingStore((state) => state.setShowGrid);
   const setStrokeWidth = useDrawingStore((state) => state.setStrokeWidth);
+  const setDrawingStyle = useDrawingStore((state) => state.setDrawingStyle);
   const setZoom = useDrawingStore((state) => state.setZoom);
   const storeColor = useDrawingStore((state) => state.currentColor);
   const storeOpacity = useDrawingStore((state) => state.currentOpacity);
@@ -985,6 +987,16 @@ export function useFabricCanvas() {
           return `已将选中对象透明度设为 ${Math.round(opacity * 100)}%`;
         }
         return `当前透明度已设为 ${Math.round(opacity * 100)}%`;
+      }
+
+      if (command.intent === 'set_drawing_style') {
+        const preset = drawingStyleMap[command.style];
+        setDrawingStyle(command.style);
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = preset.stroke;
+          canvas.freeDrawingBrush.width = preset.strokeWidth;
+        }
+        return `当前画风已切换为${preset.label}`;
       }
 
       if (command.intent === 'select_all') {

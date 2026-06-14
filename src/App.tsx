@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, RotateCw } from 'lucide-react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
+import { getDrawingStyleLabel } from './drawingStyles';
 import type { CommandHistoryItem, DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
 import { parseCommands } from './nlu/parseCommand';
@@ -44,6 +45,7 @@ export function App() {
   const currentStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
   const currentOpacity = useDrawingStore((state) => state.currentOpacity);
+  const currentDrawingStyle = useDrawingStore((state) => state.currentDrawingStyle);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
   const showGrid = useDrawingStore((state) => state.showGrid);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
@@ -217,6 +219,7 @@ export function App() {
             描边
           </span>
           <span>画笔 {currentStrokeWidth}px</span>
+          <span>画风 {getDrawingStyleLabel(currentDrawingStyle)}</span>
           <span>透明度 {Math.round(currentOpacity * 100)}%</span>
           <span>选中 {selectedCount}</span>
           <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
@@ -284,6 +287,8 @@ export function App() {
                 <span>画一个女人的头</span>
                 <span>画一个二次元人物</span>
                 <span>用画笔画一个二次元人物</span>
+                <span>切换成水墨画风</span>
+                <span>以后用简笔画风</span>
               </div>
             ) : null}
           </section>
