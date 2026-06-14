@@ -9,6 +9,7 @@ import {
   FilePlus2,
   FileUp,
   FolderOpen,
+  Sparkles,
   Grid2X2,
   House,
   Lock,
@@ -152,6 +153,14 @@ export function CanvasWorkspace({
           onClick={() => void runCommand({ intent: 'draw_template', template: 'house' }, '画一个房子')}
         >
           <House size={18} />
+        </button>
+        <button
+          className="tool-button"
+          type="button"
+          title="AI 草稿画笔复刻"
+          onClick={() => void runCommand({ intent: 'ai_brush_draw', prompt: '长发二次元少女头像线稿' }, 'AI画笔画一个长发二次元少女头像')}
+        >
+          <Sparkles size={18} />
         </button>
         <button
           className="tool-button"

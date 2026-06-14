@@ -47,6 +47,15 @@ function findDrawingStyle(text: string) {
   return drawingStyles.find(([, pattern]) => pattern.test(text))?.[0];
 }
 
+function findAiBrushPrompt(rawText: string) {
+  return rawText
+    .replace(/\s+/g, '')
+    .replace(/^(请|帮我|给我)?(用)?(AI|ai|人工智能)?(生成)?(一张)?(草稿|参考图)?(再)?(用)?(画笔|笔刷)?(复刻|描摹|临摹|画)/, '')
+    .replace(/^(AI|ai)?(画笔|笔刷)(画|生成|复刻)/, '')
+    .replace(/^(生成|画)(一个|一张|一幅)?/, '')
+    .trim();
+}
+
 function findSize(text: string) {
   const explicit = text.match(/(\d+)\s*(像素|px|PX)?/);
   if (explicit) {
@@ -135,6 +144,10 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   const requestedDrawingStyle = findDrawingStyle(text);
   if (requestedDrawingStyle && /画风|风格|样式|以后|接下来|切换|换成|改成|设为|设置|用/.test(text)) {
     return { intent: 'set_drawing_style', style: requestedDrawingStyle };
+  }
+  if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(rawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
+    const prompt = findAiBrushPrompt(rawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
   }
   if (/(画笔|手绘|线稿|草图|勾线|笔刷)/.test(rawText) && /(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
     return { intent: 'draw_template', template: 'anime_sketch' };

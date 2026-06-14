@@ -25,9 +25,19 @@ BAIDU_TTS_SPD=5
 BAIDU_TTS_PIT=5
 BAIDU_TTS_VOL=7
 BAIDU_TTS_AUE=3
+RIGHT_CODES_DRAW_API_KEY=your_right_codes_draw_key
+RIGHT_CODES_DRAW_BASE_URL=https://www.right.codes/draw
+RIGHT_CODES_DRAW_MODEL=gpt-image-2
+RIGHT_CODES_DRAW_SIZE=1024x1024
+RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_IMAGE_SIZE=1024x1024
 ```
 
 `BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
+
+`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, VoiceDraw uses a local fallback sketch so the brush-tracing pipeline can still be tested.
 
 ## Implemented
 
@@ -46,6 +56,7 @@ BAIDU_TTS_AUE=3
 - Built-in smiley and bar chart templates with toolbar shortcuts.
 - Additional templates for flowcharts, suns, and houses.
 - Free drawing mode using Fabric PencilBrush with voice and toolbar toggles.
+- AI draft brush replica: generate a sketch draft, trace the dark lines, and replay them as Fabric Path brush strokes.
 - Grid visibility toggle from voice commands, toolbar controls, and status display.
 - PNG export.
 - SVG export.
@@ -115,6 +126,7 @@ BAIDU_TTS_AUE=3
 - 画一个女人的头
 - 画一个二次元人物
 - 用画笔画一个二次元人物
+- AI画笔画一个长发二次元少女头像
 - 把所有红色圆改成蓝色
 - 导出 SVG
 - 保存 JSON 工程

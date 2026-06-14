@@ -30,6 +30,8 @@ const PORT = Number(process.env.BAIDU_ASR_PORT ?? 3001);
 const TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token';
 const ASR_URL = 'https://vop.baidu.com/server_api';
 const TTS_URL = 'https://tsn.baidu.com/text2audio';
+const OPENAI_IMAGES_URL = 'https://api.openai.com/v1/images/generations';
+const RIGHT_CODES_DRAW_BASE_URL = 'https://www.right.codes/draw';
 const TOKEN_REFRESH_WINDOW_MS = 60 * 60 * 1000;
 
 let cachedToken = null;
@@ -180,6 +182,137 @@ async function synthesizeWithBaidu(body) {
   };
 }
 
+function fallbackSketchDataUrl(prompt) {
+  const safePrompt = String(prompt ?? 'anime character')
+    .replace(/[<>&"']/g, '')
+    .slice(0, 80);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="white"/>
+  <g fill="none" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M156 222C142 121 213 64 278 82C354 60 408 128 378 226"/>
+    <path d="M172 208C150 296 188 382 258 394C338 382 380 296 354 206"/>
+    <path d="M175 214C119 248 116 358 178 430"/>
+    <path d="M357 214C416 254 405 360 334 430"/>
+    <path d="M198 132C204 182 196 218 174 251"/>
+    <path d="M250 102C228 172 238 223 265 252"/>
+    <path d="M314 118C292 172 306 218 340 248"/>
+    <path d="M204 245C224 222 254 224 270 246"/>
+    <path d="M299 246C318 223 348 224 365 247"/>
+    <path d="M226 260C226 295 252 296 252 260"/>
+    <path d="M320 260C320 296 346 296 346 260"/>
+    <path d="M276 280C268 309 270 323 286 328"/>
+    <path d="M246 352C269 372 306 371 328 349"/>
+    <path d="M204 336C224 326 244 331 258 348"/>
+    <path d="M314 348C330 330 354 326 374 338"/>
+    <path d="M226 398C196 423 158 436 128 472"/>
+    <path d="M304 398C336 424 382 438 410 472"/>
+  </g>
+  <text x="256" y="500" text-anchor="middle" fill="#aaa" font-family="sans-serif" font-size="18">${safePrompt}</text>
+</svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+async function imageUrlToDataUrl(url) {
+  const imageResponse = await fetch(url);
+  if (!imageResponse.ok) {
+    throw new Error(`Failed to download generated image with HTTP ${imageResponse.status}`);
+  }
+  const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
+  const payload = Buffer.from(await imageResponse.arrayBuffer());
+  return `data:${contentType};base64,${payload.toString('base64')}`;
+}
+
+function normalizeImageDataUrl(image) {
+  if (image?.b64_json) {
+    return `data:image/png;base64,${image.b64_json}`;
+  }
+  if (image?.url) {
+    return imageUrlToDataUrl(image.url);
+  }
+  return null;
+}
+
+async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat }) {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
+  const response = await fetch(`${normalizedBaseUrl}/v1/images/generations`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      size,
+      ...(responseFormat ? { response_format: responseFormat } : {}),
+    }),
+  });
+  const data = await response.json();
+  const image = data?.data?.[0];
+  const imageDataUrl = await normalizeImageDataUrl(image);
+  if (!response.ok || !imageDataUrl) {
+    throw new Error(data?.error?.message ?? `Image generation failed with HTTP ${response.status}`);
+  }
+  return imageDataUrl;
+}
+
+async function generateSketchDraft(body) {
+  const prompt = String(body.prompt ?? '').trim();
+  if (!prompt) {
+    throw new Error('Missing sketch prompt');
+  }
+
+  const rightCodesApiKey = process.env.RIGHT_CODES_DRAW_API_KEY ?? process.env.RIGHT_CODES_API_KEY;
+  const openAiApiKey = process.env.OPENAI_API_KEY;
+  if (!rightCodesApiKey && !openAiApiKey) {
+    return {
+      imageDataUrl: fallbackSketchDataUrl(prompt),
+      provider: 'fallback',
+      prompt,
+    };
+  }
+
+  const model = process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-1';
+  const imagePrompt = [
+    'Clean black and white anime line art sketch on a white background.',
+    'Use confident readable outlines, minimal shading, no text, no watermark.',
+    `Subject: ${prompt}`,
+  ].join(' ');
+
+  if (rightCodesApiKey) {
+    const rightCodesModel = process.env.RIGHT_CODES_DRAW_MODEL ?? process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-2';
+    const imageDataUrl = await requestImageGeneration({
+      apiKey: rightCodesApiKey,
+      baseUrl: process.env.RIGHT_CODES_DRAW_BASE_URL ?? RIGHT_CODES_DRAW_BASE_URL,
+      model: rightCodesModel,
+      prompt: imagePrompt,
+      size: process.env.RIGHT_CODES_DRAW_SIZE ?? process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
+      responseFormat: process.env.RIGHT_CODES_DRAW_RESPONSE_FORMAT ?? 'url',
+    });
+    return {
+      imageDataUrl,
+      provider: 'right_codes',
+      model: rightCodesModel,
+      prompt,
+    };
+  }
+
+  const imageDataUrl = await requestImageGeneration({
+    apiKey: openAiApiKey,
+    baseUrl: OPENAI_IMAGES_URL.replace(/\/v1\/images\/generations$/, ''),
+    model,
+    prompt: imagePrompt,
+    size: process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
+    responseFormat: 'b64_json',
+  });
+  return {
+    imageDataUrl,
+    provider: 'openai',
+    model,
+    prompt,
+  };
+}
+
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     sendJson(response, 204, {});
@@ -201,6 +334,11 @@ const server = createServer(async (request, response) => {
     if (request.url === '/api/tts/baidu') {
       const result = await synthesizeWithBaidu(body);
       sendAudio(response, result.contentType, result.payload);
+      return;
+    }
+    if (request.url === '/api/sketch/draft') {
+      const result = await generateSketchDraft(body);
+      sendJson(response, 200, result);
       return;
     }
     sendJson(response, 404, { error: 'Not found' });
