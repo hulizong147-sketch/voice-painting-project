@@ -1784,8 +1784,6 @@ export function useFabricCanvas() {
           sun: { label: '太阳模板', objects: createSun(center.x, center.y) },
           house: { label: '房子模板', objects: createHouse(center.x, center.y) },
           woman_head: { label: '女性头像模板', objects: createWomanHead(center.x, center.y) },
-          anime_character: { label: '二次元人物模板', objects: createAnimeCharacter(center.x, center.y) },
-          anime_sketch: { label: '二次元线稿模板', objects: createAnimeSketch(center.x, center.y) },
         };
         const template = templateMap[command.template];
         const objects = template.objects;
