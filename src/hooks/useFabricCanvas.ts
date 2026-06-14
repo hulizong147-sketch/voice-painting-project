@@ -6,6 +6,7 @@ import {
   FabricObject,
   Group,
   Line,
+  Path,
   PencilBrush,
   Point,
   Polygon,
@@ -724,6 +725,68 @@ function createAnimeCharacter(centerX: number, centerY: number) {
     ...cheeks,
     mouth,
   ];
+}
+
+function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
+  return withSemanticShape(
+    new Path(path, {
+      fill: 'transparent',
+      stroke,
+      strokeWidth,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round',
+    }),
+    'line',
+  );
+}
+
+function createAnimeSketch(centerX: number, centerY: number) {
+  const ink = '#172018';
+  const softInk = '#415042';
+  const blush = '#d7798d';
+  const p = (path: string, stroke = ink, strokeWidth = 5) => createSketchPath(path, stroke, strokeWidth);
+
+  const face = p(
+    `M ${centerX - 64} ${centerY - 22}
+     C ${centerX - 72} ${centerY + 24}, ${centerX - 50} ${centerY + 78}, ${centerX - 6} ${centerY + 88}
+     C ${centerX + 42} ${centerY + 78}, ${centerX + 68} ${centerY + 24}, ${centerX + 58} ${centerY - 24}`,
+  );
+  const hairCap = p(
+    `M ${centerX - 76} ${centerY - 18}
+     C ${centerX - 92} ${centerY - 76}, ${centerX - 38} ${centerY - 120}, ${centerX + 8} ${centerY - 108}
+     C ${centerX + 60} ${centerY - 122}, ${centerX + 94} ${centerY - 72}, ${centerX + 72} ${centerY - 14}`,
+    ink,
+    6,
+  );
+  const bangs = [
+    p(`M ${centerX - 52} ${centerY - 76} C ${centerX - 54} ${centerY - 42}, ${centerX - 44} ${centerY - 20}, ${centerX - 30} ${centerY - 2}`),
+    p(`M ${centerX - 16} ${centerY - 94} C ${centerX - 24} ${centerY - 54}, ${centerX - 10} ${centerY - 22}, ${centerX + 4} ${centerY - 4}`),
+    p(`M ${centerX + 22} ${centerY - 90} C ${centerX + 12} ${centerY - 54}, ${centerX + 26} ${centerY - 22}, ${centerX + 42} ${centerY - 6}`),
+  ];
+  const sideHair = [
+    p(`M ${centerX - 76} ${centerY - 20} C ${centerX - 118} ${centerY + 12}, ${centerX - 104} ${centerY + 86}, ${centerX - 72} ${centerY + 132}`),
+    p(`M ${centerX + 72} ${centerY - 18} C ${centerX + 116} ${centerY + 16}, ${centerX + 100} ${centerY + 90}, ${centerX + 62} ${centerY + 132}`),
+    p(`M ${centerX - 104} ${centerY + 36} C ${centerX - 132} ${centerY + 82}, ${centerX - 122} ${centerY + 130}, ${centerX - 86} ${centerY + 168}`, softInk, 4),
+    p(`M ${centerX + 98} ${centerY + 36} C ${centerX + 130} ${centerY + 82}, ${centerX + 116} ${centerY + 132}, ${centerX + 80} ${centerY + 168}`, softInk, 4),
+  ];
+  const eyes = [
+    p(`M ${centerX - 48} ${centerY - 12} C ${centerX - 38} ${centerY - 28}, ${centerX - 18} ${centerY - 28}, ${centerX - 8} ${centerY - 12}`, ink, 4),
+    p(`M ${centerX + 8} ${centerY - 12} C ${centerX + 18} ${centerY - 28}, ${centerX + 38} ${centerY - 28}, ${centerX + 48} ${centerY - 12}`, ink, 4),
+    p(`M ${centerX - 36} ${centerY - 6} C ${centerX - 36} ${centerY + 18}, ${centerX - 20} ${centerY + 18}, ${centerX - 20} ${centerY - 6}`, ink, 4),
+    p(`M ${centerX + 22} ${centerY - 6} C ${centerX + 22} ${centerY + 18}, ${centerX + 38} ${centerY + 18}, ${centerX + 38} ${centerY - 6}`, ink, 4),
+  ];
+  const details = [
+    p(`M ${centerX - 42} ${centerY - 40} C ${centerX - 30} ${centerY - 48}, ${centerX - 18} ${centerY - 48}, ${centerX - 6} ${centerY - 42}`, softInk, 3),
+    p(`M ${centerX + 6} ${centerY - 42} C ${centerX + 18} ${centerY - 48}, ${centerX + 30} ${centerY - 48}, ${centerX + 42} ${centerY - 40}`, softInk, 3),
+    p(`M ${centerX} ${centerY + 8} C ${centerX - 4} ${centerY + 20}, ${centerX - 2} ${centerY + 24}, ${centerX + 4} ${centerY + 26}`, softInk, 3),
+    p(`M ${centerX - 12} ${centerY + 48} C ${centerX - 2} ${centerY + 56}, ${centerX + 12} ${centerY + 52}, ${centerX + 18} ${centerY + 44}`, ink, 4),
+    p(`M ${centerX - 54} ${centerY + 34} C ${centerX - 44} ${centerY + 28}, ${centerX - 34} ${centerY + 30}, ${centerX - 26} ${centerY + 38}`, blush, 3),
+    p(`M ${centerX + 28} ${centerY + 38} C ${centerX + 38} ${centerY + 30}, ${centerX + 50} ${centerY + 28}, ${centerX + 58} ${centerY + 34}`, blush, 3),
+    p(`M ${centerX - 24} ${centerY + 88} C ${centerX - 42} ${centerY + 110}, ${centerX - 84} ${centerY + 118}, ${centerX - 104} ${centerY + 148}`, softInk, 4),
+    p(`M ${centerX + 24} ${centerY + 88} C ${centerX + 46} ${centerY + 108}, ${centerX + 88} ${centerY + 118}, ${centerX + 108} ${centerY + 148}`, softInk, 4),
+  ];
+
+  return [face, hairCap, ...bangs, ...sideHair, ...eyes, ...details];
 }
 
 function createFlowchart(centerX: number, centerY: number) {
@@ -1616,6 +1679,7 @@ export function useFabricCanvas() {
           house: { label: '房子模板', objects: createHouse(center.x, center.y) },
           woman_head: { label: '女性头像模板', objects: createWomanHead(center.x, center.y) },
           anime_character: { label: '二次元人物模板', objects: createAnimeCharacter(center.x, center.y) },
+          anime_sketch: { label: '二次元线稿模板', objects: createAnimeSketch(center.x, center.y) },
         };
         const template = templateMap[command.template];
         const objects = template.objects;
