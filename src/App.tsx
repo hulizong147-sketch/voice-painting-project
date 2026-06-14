@@ -1,44 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, RotateCw } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { getDrawingStyleLabel } from './drawingStyles';
-import type { CommandHistoryItem, DrawingCommand } from './types';
+import type { DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
 import { parseCommands } from './nlu/parseCommand';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { speakFeedback } from './services/speechFeedback';
-
-const normalizeImportedCommands = (value: unknown): CommandHistoryItem[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .flatMap((item) => {
-      if (!item || typeof item !== 'object') {
-        return [];
-      }
-      const candidate = item as Partial<CommandHistoryItem>;
-      if (
-        typeof candidate.text === 'string' &&
-        typeof candidate.result === 'string' &&
-        typeof candidate.createdAt === 'number' &&
-        Number.isFinite(candidate.createdAt) &&
-        typeof candidate.ok === 'boolean'
-      ) {
-        return [{
-          id: typeof candidate.id === 'string' && candidate.id.length > 0 ? candidate.id : crypto.randomUUID(),
-          text: candidate.text,
-          result: candidate.result,
-          createdAt: candidate.createdAt,
-          ok: candidate.ok,
-        }];
-      }
-      return [];
-    })
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 24);
-};
 
 export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
@@ -62,22 +29,8 @@ export function App() {
   const setListeningMode = useDrawingStore((state) => state.setListeningMode);
   const setHelpVisible = useDrawingStore((state) => state.setHelpVisible);
   const addCommand = useDrawingStore((state) => state.addCommand);
-  const setCommands = useDrawingStore((state) => state.setCommands);
-  const clearCommands = useDrawingStore((state) => state.clearCommands);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
-  const [typedCommand, setTypedCommand] = useState('');
-  const [commandHistoryQuery, setCommandHistoryQuery] = useState('');
   const executeRef = useRef<(command: DrawingCommand) => Promise<string>>();
-  const visibleCommands = useMemo(() => {
-    const query = commandHistoryQuery.trim().toLowerCase();
-    if (!query) {
-      return commands;
-    }
-    return commands.filter((item) => (
-      item.text.toLowerCase().includes(query) ||
-      item.result.toLowerCase().includes(query)
-    ));
-  }, [commandHistoryQuery, commands]);
 
   const handleCommand = useCallback((_command: DrawingCommand, text: string, result: string) => {
     if (_command.intent === 'show_help') {
@@ -123,50 +76,6 @@ export function App() {
     },
     [handleCommand, setFeedback],
   );
-
-  const exportCommandHistory = useCallback(() => {
-    const blob = new Blob([JSON.stringify(commands, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.download = `voicedraw-command-history-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, [commands]);
-
-  const importCommandHistory = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json,.json';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) {
-        return;
-      }
-
-      try {
-        const parsed = JSON.parse(await file.text()) as unknown;
-        const nextCommands = normalizeImportedCommands(parsed);
-        if (nextCommands.length === 0) {
-          setFeedback('没有导入有效的命令历史');
-          return;
-        }
-        setCommands(nextCommands);
-        setFeedback(`已导入 ${nextCommands.length} 条命令历史`);
-      } catch {
-        setFeedback('命令历史文件不是有效的 JSON');
-      }
-    };
-    input.click();
-  }, [setCommands, setFeedback]);
-
-  const copyCommandText = useCallback(async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setFeedback('已复制命令文本');
-    } catch {
-      setFeedback('复制命令文本失败');
-    }
-  }, [setFeedback]);
 
   const speech = useSpeechRecognition((text) => {
     void runTextCommand(text);
@@ -299,61 +208,23 @@ export function App() {
                 <span>把所有红色圆改成蓝色</span>
                 <span>导出 SVG</span>
                 <span>适应屏幕</span>
-                <span>画一个流程图</span>
+                <span>在左上角画一个松鼠</span>
                 <span>画一个房子</span>
-                <span>画一个女人的头</span>
-                <span>画一个二次元的人</span>
-                <span>AI画笔画一个长发二次元少女头像</span>
+                <span>在右边画一个二次元头像</span>
+                <span>给它戴帽子</span>
                 <span>切换成水墨画风</span>
                 <span>以后用简笔画风</span>
               </div>
             ) : null}
           </section>
-          <form
-            className="text-command"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void runTextCommand(typedCommand);
-              setTypedCommand('');
-            }}
-          >
-            <input
-              aria-label="输入文本命令"
-              placeholder="输入：画一个蓝色三角形"
-              value={typedCommand}
-              onChange={(event) => setTypedCommand(event.target.value)}
-            />
-            <button type="submit">执行</button>
-          </form>
           <div className="command-list">
             <div className="command-list-header">
               <h2>命令历史</h2>
-              <div className="command-list-actions">
-                <button type="button" onClick={importCommandHistory}>
-                  导入
-                </button>
-                <button type="button" onClick={exportCommandHistory} disabled={commands.length === 0}>
-                  导出
-                </button>
-                <button type="button" onClick={clearCommands} disabled={commands.length === 0}>
-                  清空
-                </button>
-              </div>
             </div>
-            <input
-              className="command-search"
-              aria-label="筛选命令历史"
-              placeholder="筛选历史"
-              value={commandHistoryQuery}
-              onChange={(event) => setCommandHistoryQuery(event.target.value)}
-              disabled={commands.length === 0}
-            />
             {commands.length === 0 ? (
               <p className="empty-copy">还没有命令。</p>
-            ) : visibleCommands.length === 0 ? (
-              <p className="empty-copy">没有匹配的命令历史。</p>
             ) : (
-              visibleCommands.map((item) => (
+              commands.map((item) => (
                 <article className="command-item" key={item.id}>
                   <div className="command-item-header">
                     <div className="command-item-meta">
@@ -361,24 +232,6 @@ export function App() {
                       <span className={item.ok ? 'command-status success' : 'command-status error'}>
                         {item.ok ? '成功' : '失败'}
                       </span>
-                    </div>
-                    <div className="command-item-actions">
-                      <button
-                        aria-label={`复制命令：${item.text}`}
-                        title="复制命令"
-                        type="button"
-                        onClick={() => void copyCommandText(item.text)}
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        aria-label={`重新执行：${item.text}`}
-                        title="重新执行"
-                        type="button"
-                        onClick={() => void runTextCommand(item.text)}
-                      >
-                        <RotateCw size={14} />
-                      </button>
                     </div>
                   </div>
                   <strong>{item.text}</strong>

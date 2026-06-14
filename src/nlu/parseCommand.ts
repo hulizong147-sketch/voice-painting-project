@@ -199,10 +199,10 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
   if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(normalizedRawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
     const prompt = findAiBrushPrompt(normalizedRawText);
-    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim() };
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim(), ...findPosition(text) };
   }
   if (/(二次元|动漫|动画|anime|卡通)/i.test(normalizedRawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(normalizedRawText)) {
-    return { intent: 'ai_brush_draw', prompt: normalizedRawText.trim() };
+    return { intent: 'ai_brush_draw', prompt: normalizedRawText.trim(), ...findPosition(text) };
   }
   if (!text) {
     return { intent: 'unknown', reason: '没有识别到命令' };
@@ -562,11 +562,11 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   if (isGeneralDrawingRequest(text)) {
     const prompt = findAiBrushPrompt(normalizedRawText);
-    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim() };
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim(), ...findPosition(text) };
   }
 
   if (isLikelyDrawableSubject(text)) {
-    return { intent: 'ai_brush_draw', prompt: text };
+    return { intent: 'ai_brush_draw', prompt: text, ...findPosition(text) };
   }
 
   return { intent: 'unknown', reason: `还不能理解：“${rawText}”` };

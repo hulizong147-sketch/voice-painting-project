@@ -170,6 +170,48 @@ function getObjectId(object: FabricObject) {
   return String(object.get('id') ?? '');
 }
 
+function resolveRequestedPoint(
+  command: { x?: number; y?: number },
+  fallback: { x: number; y: number },
+) {
+  return {
+    x: command.x ?? fallback.x,
+    y: command.y ?? fallback.y,
+  };
+}
+
+function findOpenCanvasPoint(canvas: Canvas) {
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  const objects = canvas.getObjects();
+  const candidates = [
+    { x: width * 0.28, y: height * 0.32 },
+    { x: width * 0.72, y: height * 0.32 },
+    { x: width * 0.28, y: height * 0.68 },
+    { x: width * 0.72, y: height * 0.68 },
+    { x: width * 0.5, y: height * 0.5 },
+  ];
+
+  if (objects.length === 0) {
+    return candidates[4];
+  }
+
+  const scorePoint = (point: { x: number; y: number }) => objects.reduce((score, object) => {
+    const center = getObjectCenter(object);
+    const distance = Math.hypot(point.x - center.x, point.y - center.y);
+    const bounds = getObjectBounds(object);
+    const overlapPenalty = point.x >= bounds.left - 160 &&
+      point.x <= bounds.right + 160 &&
+      point.y >= bounds.top - 160 &&
+      point.y <= bounds.bottom + 160
+      ? 1000
+      : 0;
+    return score + Math.min(distance, 900) - overlapPenalty;
+  }, 0);
+
+  return [...candidates].sort((a, b) => scorePoint(b) - scorePoint(a))[0];
+}
+
 function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {
   if (!position || objects.length <= 1) {
     return objects;
@@ -1705,9 +1747,7 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'place_ai_draft_image') {
-        const center = canvas.getActiveObject()
-          ? getObjectCenter(canvas.getActiveObject()!)
-          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
         const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(command.prompt)).imageDataUrl;
         const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);
@@ -1720,9 +1760,7 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'ai_brush_draw') {
-        const center = canvas.getActiveObject()
-          ? getObjectCenter(canvas.getActiveObject()!)
-          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
         const draft = await generateSketchDraft(command.prompt);
         const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);

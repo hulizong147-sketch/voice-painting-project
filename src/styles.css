@@ -305,7 +305,7 @@ h1 {
 
 .side-panel {
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(180px, 1fr);
+  grid-template-rows: auto auto auto minmax(180px, 1fr);
   gap: 12px;
   min-height: 0;
   padding: 14px;
@@ -393,7 +393,6 @@ h1 {
 }
 
 .help-panel,
-.text-command,
 .command-list {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -437,41 +436,6 @@ h1 {
   background: var(--surface-soft);
 }
 
-.text-command {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 10px;
-}
-
-.text-command input {
-  width: 100%;
-  min-height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0 12px;
-  color: var(--ink);
-  background: var(--surface-soft);
-  outline: none;
-}
-
-.text-command input:focus,
-.command-search:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(15, 117, 104, 0.1);
-}
-
-.text-command button {
-  min-height: 40px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0 15px;
-  color: #ffffff;
-  font-weight: 900;
-  background: linear-gradient(180deg, var(--brand), var(--brand-strong));
-  cursor: pointer;
-}
-
 .command-list {
   min-height: 0;
   overflow: auto;
@@ -487,49 +451,6 @@ h1 {
 
 .command-list-header h2 {
   margin: 0;
-}
-
-.command-list-header button {
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--ink-muted);
-  font-size: 12px;
-  font-weight: 800;
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.command-list-header button:not(:disabled):hover {
-  border-color: var(--brand);
-  color: var(--brand);
-}
-
-.command-list-header button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.command-list-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.command-search {
-  width: 100%;
-  margin-top: 12px;
-  padding: 10px 11px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--ink);
-  background: var(--surface-soft);
-  outline: none;
-}
-
-.command-search:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .empty-copy {
@@ -579,30 +500,6 @@ h1 {
 .command-status.error {
   color: var(--accent);
   background: #fbe8e1;
-}
-
-.command-item-actions {
-  display: flex;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.command-item-actions button {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--ink-muted);
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.command-item-actions button:hover {
-  border-color: var(--brand);
-  color: var(--brand);
 }
 
 .command-item time {
@@ -663,7 +560,4 @@ h1 {
     padding: 12px;
   }
 
-  .text-command {
-    grid-template-columns: 1fr;
-  }
 }
