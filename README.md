@@ -12,6 +12,14 @@ npm run dev -- --port 5173
 
 Open http://127.0.0.1:5173.
 
+On Windows, if terminal output shows garbled Chinese, switch the shell to UTF-8 before starting dev:
+
+```powershell
+chcp 65001
+$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+npm run dev
+```
+
 For Baidu speech recognition and voice feedback, create a Baidu Intelligent Cloud speech app, enable short speech recognition and online text-to-speech, then fill these values in `.env`:
 
 ```bash
