@@ -62,6 +62,31 @@ function isGeneralDrawingRequest(text: string) {
     && !/(撤销|重做|删除|选中|选择|复制|粘贴|组合|取消组合|锁定|解锁|隐藏|显示|导出|保存|打开|新建|清空|放大|缩小|移动|旋转|翻转|对齐|分布|颜色|换成|改成|设为|画风|风格|样式|背景|透明|画笔粗细|字号|文字内容)/.test(text);
 }
 
+function findIncrementalEdit(text: string): Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'] | undefined {
+  if (!/(加|添加|画|补|戴|变|改|弄|加强|加粗|放大|变大)/.test(text)) {
+    return undefined;
+  }
+  if (/尾巴|大尾巴|松鼠尾|狐狸尾/.test(text)) {
+    return 'tail';
+  }
+  if (/耳朵|猫耳|兽耳/.test(text)) {
+    return 'ears';
+  }
+  if (/帽子|头饰|发饰/.test(text)) {
+    return 'hat';
+  }
+  if (/眼睛.*(大|放大|更大)|大眼睛|眼睛变大/.test(text)) {
+    return 'bigger_eyes';
+  }
+  if (/胡须|胡子/.test(text)) {
+    return 'whiskers';
+  }
+  if (/线条.*(粗|加粗|更粗)|描边.*(粗|加粗|更粗)|画笔.*(粗|加粗|更粗)/.test(text)) {
+    return 'thicker_lines';
+  }
+  return undefined;
+}
+
 function findSize(text: string) {
   const explicit = text.match(/(\d+)\s*(像素|px|PX)?/);
   if (explicit) {
@@ -150,6 +175,10 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   const requestedDrawingStyle = findDrawingStyle(text);
   if (requestedDrawingStyle && /画风|风格|样式|以后|接下来|切换|换成|改成|设为|设置|用/.test(text)) {
     return { intent: 'set_drawing_style', style: requestedDrawingStyle };
+  }
+  const incrementalEdit = findIncrementalEdit(text);
+  if (incrementalEdit) {
+    return { intent: 'incremental_edit', edit: incrementalEdit };
   }
   if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(rawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
     const prompt = findAiBrushPrompt(rawText);

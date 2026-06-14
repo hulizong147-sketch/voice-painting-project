@@ -107,6 +107,10 @@ export type DrawingCommand =
   | { intent: 'pan_canvas'; dx: number; dy: number }
   | { intent: 'ai_brush_draw'; prompt: string }
   | {
+      intent: 'incremental_edit';
+      edit: 'tail' | 'ears' | 'hat' | 'bigger_eyes' | 'thicker_lines' | 'whiskers';
+    }
+  | {
       intent: 'draw_template';
       template:
         | 'smiley'

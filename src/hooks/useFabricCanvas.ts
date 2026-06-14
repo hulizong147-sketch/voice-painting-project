@@ -743,6 +743,86 @@ function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
   );
 }
 
+function mergeBounds(bounds: ReturnType<typeof getObjectBounds>[]) {
+  const left = Math.min(...bounds.map((bound) => bound.left));
+  const top = Math.min(...bounds.map((bound) => bound.top));
+  const right = Math.max(...bounds.map((bound) => bound.right));
+  const bottom = Math.max(...bounds.map((bound) => bound.bottom));
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function createIncrementalStrokePaths(
+  edit: Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'],
+  bounds: ReturnType<typeof getObjectBounds>,
+) {
+  const ink = '#172018';
+  const softInk = '#4b5a4d';
+  const cx = bounds.left + bounds.width / 2;
+  const cy = bounds.top + bounds.height / 2;
+  const unit = Math.max(42, Math.min(120, Math.max(bounds.width, bounds.height) * 0.28));
+  const p = (path: string, stroke = ink, strokeWidth = 4) => createSketchPath(path, stroke, strokeWidth);
+
+  if (edit === 'tail') {
+    const baseX = bounds.right - unit * 0.16;
+    const baseY = cy + unit * 0.18;
+    const tipX = bounds.right + unit * 1.55;
+    const tipY = cy - unit * 0.62;
+    return [
+      p(`M ${baseX} ${baseY} C ${bounds.right + unit * 0.6} ${cy + unit * 0.9}, ${tipX + unit * 0.28} ${cy + unit * 0.22}, ${tipX} ${tipY}`, ink, 5),
+      p(`M ${baseX + unit * 0.12} ${baseY - unit * 0.16} C ${bounds.right + unit * 0.76} ${cy + unit * 0.3}, ${tipX + unit * 0.02} ${cy - unit * 1.1}, ${bounds.right + unit * 0.54} ${cy - unit * 0.78}`, ink, 5),
+      p(`M ${bounds.right + unit * 0.3} ${cy + unit * 0.34} C ${bounds.right + unit * 0.75} ${cy + unit * 0.06}, ${bounds.right + unit * 0.96} ${cy - unit * 0.3}, ${bounds.right + unit * 1.18} ${cy - unit * 0.52}`, softInk, 3),
+    ];
+  }
+
+  if (edit === 'ears') {
+    const y = bounds.top + unit * 0.05;
+    return [
+      p(`M ${cx - unit * 0.62} ${y + unit * 0.34} L ${cx - unit * 0.38} ${y - unit * 0.48} L ${cx - unit * 0.1} ${y + unit * 0.26}`, ink, 5),
+      p(`M ${cx + unit * 0.1} ${y + unit * 0.26} L ${cx + unit * 0.38} ${y - unit * 0.48} L ${cx + unit * 0.62} ${y + unit * 0.34}`, ink, 5),
+      p(`M ${cx - unit * 0.42} ${y + unit * 0.14} L ${cx - unit * 0.34} ${y - unit * 0.16} L ${cx - unit * 0.2} ${y + unit * 0.1}`, softInk, 2.8),
+      p(`M ${cx + unit * 0.2} ${y + unit * 0.1} L ${cx + unit * 0.34} ${y - unit * 0.16} L ${cx + unit * 0.42} ${y + unit * 0.14}`, softInk, 2.8),
+    ];
+  }
+
+  if (edit === 'hat') {
+    const y = bounds.top - unit * 0.12;
+    return [
+      p(`M ${cx - unit * 0.9} ${y + unit * 0.42} C ${cx - unit * 0.36} ${y + unit * 0.24}, ${cx + unit * 0.36} ${y + unit * 0.24}, ${cx + unit * 0.9} ${y + unit * 0.42}`, ink, 5),
+      p(`M ${cx - unit * 0.46} ${y + unit * 0.32} L ${cx - unit * 0.34} ${y - unit * 0.34} C ${cx - unit * 0.08} ${y - unit * 0.52}, ${cx + unit * 0.28} ${y - unit * 0.48}, ${cx + unit * 0.42} ${y + unit * 0.32}`, ink, 5),
+      p(`M ${cx - unit * 0.38} ${y + unit * 0.1} C ${cx - unit * 0.02} ${y + unit * 0.22}, ${cx + unit * 0.22} ${y + unit * 0.18}, ${cx + unit * 0.38} ${y + unit * 0.08}`, softInk, 3),
+    ];
+  }
+
+  if (edit === 'bigger_eyes') {
+    const y = cy - unit * 0.22;
+    return [
+      p(`M ${cx - unit * 0.58} ${y} C ${cx - unit * 0.46} ${y - unit * 0.18}, ${cx - unit * 0.18} ${y - unit * 0.18}, ${cx - unit * 0.08} ${y} C ${cx - unit * 0.2} ${y + unit * 0.2}, ${cx - unit * 0.46} ${y + unit * 0.2}, ${cx - unit * 0.58} ${y}`, ink, 4.2),
+      p(`M ${cx + unit * 0.08} ${y} C ${cx + unit * 0.2} ${y - unit * 0.18}, ${cx + unit * 0.46} ${y - unit * 0.18}, ${cx + unit * 0.58} ${y} C ${cx + unit * 0.46} ${y + unit * 0.2}, ${cx + unit * 0.2} ${y + unit * 0.2}, ${cx + unit * 0.08} ${y}`, ink, 4.2),
+      p(`M ${cx - unit * 0.42} ${y - unit * 0.06} C ${cx - unit * 0.36} ${y + unit * 0.06}, ${cx - unit * 0.3} ${y + unit * 0.1}, ${cx - unit * 0.24} ${y + unit * 0.02}`, softInk, 2.6),
+      p(`M ${cx + unit * 0.24} ${y + unit * 0.02} C ${cx + unit * 0.3} ${y + unit * 0.1}, ${cx + unit * 0.36} ${y + unit * 0.06}, ${cx + unit * 0.42} ${y - unit * 0.06}`, softInk, 2.6),
+    ];
+  }
+
+  if (edit === 'whiskers') {
+    const y = cy + unit * 0.1;
+    return [
+      p(`M ${cx - unit * 0.12} ${y - unit * 0.08} C ${cx - unit * 0.62} ${y - unit * 0.2}, ${cx - unit * 0.9} ${y - unit * 0.18}, ${cx - unit * 1.14} ${y - unit * 0.32}`, ink, 3),
+      p(`M ${cx - unit * 0.12} ${y + unit * 0.06} C ${cx - unit * 0.62} ${y + unit * 0.02}, ${cx - unit * 0.92} ${y + unit * 0.16}, ${cx - unit * 1.18} ${y + unit * 0.2}`, ink, 3),
+      p(`M ${cx + unit * 0.12} ${y - unit * 0.08} C ${cx + unit * 0.62} ${y - unit * 0.2}, ${cx + unit * 0.9} ${y - unit * 0.18}, ${cx + unit * 1.14} ${y - unit * 0.32}`, ink, 3),
+      p(`M ${cx + unit * 0.12} ${y + unit * 0.06} C ${cx + unit * 0.62} ${y + unit * 0.02}, ${cx + unit * 0.92} ${y + unit * 0.16}, ${cx + unit * 1.18} ${y + unit * 0.2}`, ink, 3),
+    ];
+  }
+
+  return [];
+}
+
 async function traceDraftToBrushPaths(imageDataUrl: string, centerX: number, centerY: number) {
   const paths = await traceDraftToPathCommands(imageDataUrl, centerX, centerY);
   return paths.map((item) => createSketchPath(item.path, '#172018', item.strokeWidth));
@@ -1573,6 +1653,58 @@ export function useFabricCanvas() {
         pushHistory();
         const source = draft.provider === 'fallback' ? '本地测试草稿' : 'AI 草稿';
         return `已根据${source}复刻 ${objects.length} 条画笔笔触`;
+      }
+
+      if (command.intent === 'incremental_edit') {
+        const activeObjects = canvas.getActiveObjects();
+        const previousObjects = canvas.getObjects()
+          .filter((object) => lastTouchedIdsRef.current.includes(getObjectId(object)));
+        const targets = activeObjects.length > 0 ? activeObjects : previousObjects;
+        if (command.edit === 'thicker_lines') {
+          const editableTargets = targets.length > 0 ? targets : canvas.getObjects();
+          if (editableTargets.length === 0) {
+            return '还没有可加粗的笔触';
+          }
+          editableTargets.forEach((object) => {
+            const currentWidth = Number(object.strokeWidth ?? 2);
+            object.set({ strokeWidth: Math.min(16, currentWidth + 2) });
+            object.setCoords();
+          });
+          canvas.requestRenderAll();
+          lastTouchedIdsRef.current = editableTargets.map(getObjectId).filter(Boolean);
+          pushHistory();
+          return `已基于当前画板加粗 ${editableTargets.length} 条笔触`;
+        }
+
+        const referenceObjects = targets.length > 0 ? targets : canvas.getObjects();
+        const referenceBounds = referenceObjects.length > 0
+          ? mergeBounds(referenceObjects.map(getObjectBounds))
+          : {
+              left: canvas.getWidth() / 2 - 90,
+              top: canvas.getHeight() / 2 - 90,
+              right: canvas.getWidth() / 2 + 90,
+              bottom: canvas.getHeight() / 2 + 90,
+              width: 180,
+              height: 180,
+            };
+        const objects = createIncrementalStrokePaths(command.edit, referenceBounds);
+        if (objects.length === 0) {
+          return '这个局部修改还没支持';
+        }
+        objects.forEach((object) => canvas.add(object));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = [...targets, ...objects].map(getObjectId).filter(Boolean);
+        pushHistory();
+        const labels: Record<Exclude<typeof command.edit, 'thicker_lines'>, string> = {
+          tail: '尾巴',
+          ears: '耳朵',
+          hat: '帽子',
+          bigger_eyes: '大眼睛',
+          whiskers: '胡须',
+        };
+        return `已基于当前画板添加${labels[command.edit]}`;
       }
 
       if (command.intent === 'draw_sequence') {
