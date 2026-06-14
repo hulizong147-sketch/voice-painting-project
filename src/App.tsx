@@ -9,15 +9,10 @@ import { speakFeedback } from './services/speechFeedback';
 
 export function App() {
   const currentColor = useDrawingStore((state) => state.currentColor);
-  const currentStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const currentStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
-  const currentOpacity = useDrawingStore((state) => state.currentOpacity);
   const currentDrawingStyle = useDrawingStore((state) => state.currentDrawingStyle);
   const selectedCount = useDrawingStore((state) => state.selectedCount);
-  const showGrid = useDrawingStore((state) => state.showGrid);
-  const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const zoom = useDrawingStore((state) => state.zoom);
-  const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
   const listeningMode = useDrawingStore((state) => state.listeningMode);
   const speechEngine = useDrawingStore((state) => state.speechEngine);
@@ -139,18 +134,9 @@ export function App() {
             <span style={{ background: currentColor }} />
             当前颜色
           </span>
-          <span className="color-pill">
-            <span style={{ background: currentStrokeColor }} />
-            描边
-          </span>
           <span>画笔 {currentStrokeWidth}px</span>
           <span>画风 {getDrawingStyleLabel(currentDrawingStyle)}</span>
-          <span>透明度 {Math.round(currentOpacity * 100)}%</span>
           <span>选中 {selectedCount}</span>
-          <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
-          <span>{speechEngine === 'baidu' ? '百度 ASR' : speechEngine === 'browser' ? '浏览器语音' : '语音待机'}</span>
-          <span>{showGrid ? '网格开' : '网格关'}</span>
-          <span>{snapEnabled ? '吸附开' : '吸附关'}</span>
           <span>{Math.round(zoom * 100)}%</span>
         </div>
       </header>
