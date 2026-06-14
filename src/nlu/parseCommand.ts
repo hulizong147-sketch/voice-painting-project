@@ -1,4 +1,4 @@
-import type { DrawingCommand, ShapeKind } from '../types';
+import type { DrawingCommand, DrawingStyleId, ShapeKind } from '../types';
 import { findColor } from './colors';
 
 const shapeNames: Array<[ShapeKind, RegExp]> = [
@@ -32,8 +32,19 @@ const positionWords: Array<[RegExp, Pick<Extract<DrawingCommand, { intent: 'draw
 
 const commandSeparators = /然后|接着|再|之后|并且|同时|，|。|；|;/g;
 
+const drawingStyles: Array<[DrawingStyleId, RegExp]> = [
+  ['anime', /二次元|动漫|动画|anime|卡通/],
+  ['ink', /水墨|国画|墨水|毛笔|泼墨/],
+  ['simple', /简笔|线稿|手绘|草图|铅笔|涂鸦/],
+  ['default', /默认|普通|标准/],
+];
+
 function findShape(text: string) {
   return shapeNames.find(([, pattern]) => pattern.test(text))?.[0];
+}
+
+function findDrawingStyle(text: string) {
+  return drawingStyles.find(([, pattern]) => pattern.test(text))?.[0];
 }
 
 function findSize(text: string) {
@@ -121,6 +132,10 @@ function findUpdatedTextContent(rawText: string) {
 
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
+  const requestedDrawingStyle = findDrawingStyle(text);
+  if (requestedDrawingStyle && /画风|风格|样式|以后|接下来|切换|换成|改成|设为|设置|用/.test(text)) {
+    return { intent: 'set_drawing_style', style: requestedDrawingStyle };
+  }
   if (/(画笔|手绘|线稿|草图|勾线|笔刷)/.test(rawText) && /(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
     return { intent: 'draw_template', template: 'anime_sketch' };
   }
