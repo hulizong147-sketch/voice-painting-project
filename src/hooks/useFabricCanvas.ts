@@ -3,6 +3,7 @@ import {
   ActiveSelection,
   Canvas,
   Circle,
+  FabricImage,
   FabricObject,
   Group,
   Line,
@@ -741,6 +742,23 @@ function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
     }),
     'line',
   );
+}
+
+async function createDraftImageObject(imageDataUrl: string, centerX: number, centerY: number, maxSize = 430) {
+  const image = await FabricImage.fromURL(imageDataUrl, { crossOrigin: 'anonymous' });
+  const width = image.width ?? maxSize;
+  const height = image.height ?? maxSize;
+  const scale = Math.min(maxSize / width, maxSize / height, 1);
+  image.set({
+    left: centerX,
+    top: centerY,
+    originX: 'center',
+    originY: 'center',
+    scaleX: scale,
+    scaleY: scale,
+    selectable: true,
+  });
+  return withObjectId(image);
 }
 
 function mergeBounds(bounds: ReturnType<typeof getObjectBounds>[]) {
@@ -1674,6 +1692,21 @@ export function useFabricCanvas() {
         }
         canvas.requestRenderAll();
         return '已平移画布';
+      }
+
+      if (command.intent === 'place_ai_draft_image') {
+        const center = canvas.getActiveObject()
+          ? getObjectCenter(canvas.getActiveObject()!)
+          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(command.prompt)).imageDataUrl;
+        const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y);
+        canvas.add(imageObject);
+        canvas.discardActiveObject();
+        canvas.setActiveObject(imageObject);
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
+        pushHistory();
+        return '已把 AI 草稿图片放到画布';
       }
 
       if (command.intent === 'ai_brush_draw') {

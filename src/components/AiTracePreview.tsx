@@ -69,10 +69,14 @@ export function AiTracePreview({ executeCommand, onCommand }: AiTracePreviewProp
     }
     setBusy(true);
     setMessage('正在放入主画布...');
-    const command: DrawingCommand = { intent: 'ai_brush_draw', prompt: prompt.trim() };
+    const command: DrawingCommand = {
+      intent: 'place_ai_draft_image',
+      prompt: prompt.trim(),
+      imageDataUrl: draft?.imageDataUrl,
+    };
     try {
       const result = await executeCommand(command);
-      onCommand(command, `AI画笔画${prompt.trim()}`, result);
+      onCommand(command, `放入AI草稿：${prompt.trim()}`, result);
       setMessage(result);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '放入主画布失败');
@@ -100,7 +104,7 @@ export function AiTracePreview({ executeCommand, onCommand }: AiTracePreviewProp
         </button>
         <button type="button" onClick={() => void sendToCanvas()} disabled={busy || !executeCommand}>
           <SendToBack size={15} />
-          放到画布
+          放草稿到画布
         </button>
       </div>
       <div className="ai-trace-panels">

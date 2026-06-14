@@ -107,6 +107,9 @@ export function App() {
         if (item.command.intent === 'ai_brush_draw') {
           setFeedback(`正在生成 AI 草稿并复刻画笔：${item.command.prompt}`);
         }
+        if (item.command.intent === 'place_ai_draft_image') {
+          setFeedback(`正在把 AI 草稿放到画布：${item.command.prompt}`);
+        }
         if (item.command.intent === 'incremental_edit' && item.command.edit !== 'thicker_lines') {
           setFeedback('正在参考当前画板重新生成修改版...');
         }
