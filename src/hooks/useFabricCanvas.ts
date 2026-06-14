@@ -33,6 +33,7 @@ const persistedObjectProps = [
   'lockScalingY',
   'hasControls',
   'visible',
+  'aiPrompt',
 ];
 type SemanticObject = FabricObject & {
   semanticShape?: ShapeKind;
@@ -744,7 +745,7 @@ function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
   );
 }
 
-async function createDraftImageObject(imageDataUrl: string, centerX: number, centerY: number, maxSize = 430) {
+async function createDraftImageObject(imageDataUrl: string, centerX: number, centerY: number, maxSize = 430, prompt?: string) {
   const image = await FabricImage.fromURL(imageDataUrl, { crossOrigin: 'anonymous' });
   const width = image.width ?? maxSize;
   const height = image.height ?? maxSize;
@@ -758,6 +759,9 @@ async function createDraftImageObject(imageDataUrl: string, centerX: number, cen
     scaleY: scale,
     selectable: true,
   });
+  if (prompt) {
+    image.set('aiPrompt', prompt);
+  }
   return withObjectId(image);
 }
 
@@ -779,6 +783,7 @@ function mergeBounds(bounds: ReturnType<typeof getObjectBounds>[]) {
 function createIncrementalStrokePaths(
   edit: Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'],
   bounds: ReturnType<typeof getObjectBounds>,
+  prompt = '',
 ) {
   const ink = '#172018';
   const softInk = '#4b5a4d';
@@ -810,11 +815,16 @@ function createIncrementalStrokePaths(
   }
 
   if (edit === 'hat') {
-    const y = bounds.top - unit * 0.12;
+    const animalHeadPrompt = /松鼠|猫|狗|兔|狐狸|仓鼠|熊猫|熊|老虎|狮子|动物|小动物/.test(prompt);
+    const hatCx = animalHeadPrompt ? bounds.left + bounds.width * 0.34 : cx;
+    const hatUnit = animalHeadPrompt
+      ? Math.max(44, Math.min(98, Math.min(bounds.width, bounds.height) * 0.22))
+      : unit;
+    const y = animalHeadPrompt ? bounds.top + bounds.height * 0.13 : bounds.top - hatUnit * 0.12;
     return [
-      p(`M ${cx - unit * 0.9} ${y + unit * 0.42} C ${cx - unit * 0.36} ${y + unit * 0.24}, ${cx + unit * 0.36} ${y + unit * 0.24}, ${cx + unit * 0.9} ${y + unit * 0.42}`, ink, 5),
-      p(`M ${cx - unit * 0.46} ${y + unit * 0.32} L ${cx - unit * 0.34} ${y - unit * 0.34} C ${cx - unit * 0.08} ${y - unit * 0.52}, ${cx + unit * 0.28} ${y - unit * 0.48}, ${cx + unit * 0.42} ${y + unit * 0.32}`, ink, 5),
-      p(`M ${cx - unit * 0.38} ${y + unit * 0.1} C ${cx - unit * 0.02} ${y + unit * 0.22}, ${cx + unit * 0.22} ${y + unit * 0.18}, ${cx + unit * 0.38} ${y + unit * 0.08}`, softInk, 3),
+      p(`M ${hatCx - hatUnit * 0.9} ${y + hatUnit * 0.42} C ${hatCx - hatUnit * 0.36} ${y + hatUnit * 0.24}, ${hatCx + hatUnit * 0.36} ${y + hatUnit * 0.24}, ${hatCx + hatUnit * 0.9} ${y + hatUnit * 0.42}`, ink, 5),
+      p(`M ${hatCx - hatUnit * 0.46} ${y + hatUnit * 0.32} L ${hatCx - hatUnit * 0.34} ${y - hatUnit * 0.34} C ${hatCx - hatUnit * 0.08} ${y - hatUnit * 0.52}, ${hatCx + hatUnit * 0.28} ${y - hatUnit * 0.48}, ${hatCx + hatUnit * 0.42} ${y + hatUnit * 0.32}`, ink, 5),
+      p(`M ${hatCx - hatUnit * 0.38} ${y + hatUnit * 0.1} C ${hatCx - hatUnit * 0.02} ${y + hatUnit * 0.22}, ${hatCx + hatUnit * 0.22} ${y + hatUnit * 0.18}, ${hatCx + hatUnit * 0.38} ${y + hatUnit * 0.08}`, softInk, 3),
     ];
   }
 
@@ -1699,7 +1709,7 @@ export function useFabricCanvas() {
           ? getObjectCenter(canvas.getActiveObject()!)
           : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
         const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(command.prompt)).imageDataUrl;
-        const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y);
+        const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);
         canvas.discardActiveObject();
         canvas.setActiveObject(imageObject);
@@ -1714,7 +1724,7 @@ export function useFabricCanvas() {
           ? getObjectCenter(canvas.getActiveObject()!)
           : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
         const draft = await generateSketchDraft(command.prompt);
-        const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y);
+        const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);
         canvas.discardActiveObject();
         canvas.setActiveObject(imageObject);
@@ -1746,28 +1756,30 @@ export function useFabricCanvas() {
           return `已基于当前画板加粗 ${editableTargets.length} 条笔触`;
         }
 
-        const canvasObjects = canvas.getObjects();
-        if (canvasObjects.length === 0) {
-          return '画布上还没有可参考的内容';
-        }
-        canvas.discardActiveObject();
-        canvas.requestRenderAll();
-        const referenceImageDataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
-        const draft = await generateSketchDraft(incrementalEditPrompts[command.edit], referenceImageDataUrl);
-        const objects = await traceDraftToBrushPaths(
-          draft.imageDataUrl,
-          canvas.getWidth() / 2,
-          canvas.getHeight() / 2,
-        );
+        const referenceObjects = targets.length > 0 ? targets : canvas.getObjects();
+        const referenceBounds = referenceObjects.length > 0
+          ? mergeBounds(referenceObjects.map(getObjectBounds))
+          : {
+              left: canvas.getWidth() / 2 - 90,
+              top: canvas.getHeight() / 2 - 90,
+              right: canvas.getWidth() / 2 + 90,
+              bottom: canvas.getHeight() / 2 + 90,
+              width: 180,
+              height: 180,
+            };
+        const promptContext = referenceObjects
+          .map((object) => String(object.get('aiPrompt') ?? ''))
+          .filter(Boolean)
+          .join(' ');
+        const objects = createIncrementalStrokePaths(command.edit, referenceBounds, promptContext);
         if (objects.length === 0) {
-          return 'AI 已生成修改图，但没有提取到可复刻的笔触';
+          return '这个局部修改还没支持';
         }
-        canvasObjects.forEach((object) => canvas.remove(object));
         objects.forEach((object) => canvas.add(object));
         canvas.discardActiveObject();
-        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
-        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        lastTouchedIdsRef.current = [...referenceObjects, ...objects].map(getObjectId).filter(Boolean);
         pushHistory();
         const labels: Record<Exclude<typeof command.edit, 'thicker_lines'>, string> = {
           tail: '尾巴',
@@ -1776,7 +1788,7 @@ export function useFabricCanvas() {
           bigger_eyes: '大眼睛',
           whiskers: '胡须',
         };
-        return `已基于当前画板重绘并添加${labels[command.edit]}`;
+        return `已在原图上叠加${labels[command.edit]}，未改动原图细节`;
       }
 
       if (command.intent === 'draw_sequence') {
