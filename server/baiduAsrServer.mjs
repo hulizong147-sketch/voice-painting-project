@@ -271,6 +271,7 @@ async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, re
       body: JSON.stringify({
         model,
         prompt,
+        image: [],
         size,
         ...(responseFormat ? { response_format: responseFormat } : {}),
       }),
