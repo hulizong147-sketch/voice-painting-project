@@ -15,7 +15,7 @@ import {
   Textbox,
   Triangle,
 } from 'fabric';
-import { drawingStyleMap } from '../drawingStyles';
+import { drawingStyleMap, getDrawingStyleLabel } from '../drawingStyles';
 import { generateSketchDraft } from '../services/aiSketch';
 import { traceDraftToPathCommands } from '../services/traceDraft';
 import type { DrawingCommand, ShapeKind } from '../types';
@@ -210,6 +210,29 @@ function findOpenCanvasPoint(canvas: Canvas) {
   }, 0);
 
   return [...candidates].sort((a, b) => scorePoint(b) - scorePoint(a))[0];
+}
+
+const colorPromptLabels: Record<string, string> = {
+  '#cf5f45': '红色点缀',
+  '#316dca': '蓝色点缀',
+  '#3f8f5f': '绿色点缀',
+  '#e3b341': '黄色点缀',
+  '#172018': '黑白线稿',
+};
+
+function buildStyledAiPrompt(
+  prompt: string,
+  style: keyof typeof drawingStyleMap,
+  color: string,
+  strokeWidth: number,
+) {
+  const styleLabel = getDrawingStyleLabel(style);
+  const colorLabel = colorPromptLabels[color.toLowerCase()] ?? '当前颜色点缀';
+  const lineWeight = strokeWidth <= 2 ? '细线条' : strokeWidth >= 6 ? '粗线条' : '中等线条';
+  const styleInstruction = style === 'default'
+    ? '干净专业的线稿草图'
+    : `${styleLabel}风格线稿草图`;
+  return `${prompt}，${styleInstruction}，${colorLabel}，${lineWeight}，白色背景，主体清晰，适合放在绘图画布中`;
 }
 
 function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {
@@ -1053,6 +1076,7 @@ export function useFabricCanvas() {
   const storeOpacity = useDrawingStore((state) => state.currentOpacity);
   const storeStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const storeStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
+  const storeDrawingStyle = useDrawingStore((state) => state.currentDrawingStyle);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const showGrid = useDrawingStore((state) => state.showGrid);
 
@@ -1748,7 +1772,8 @@ export function useFabricCanvas() {
 
       if (command.intent === 'place_ai_draft_image') {
         const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
-        const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(command.prompt)).imageDataUrl;
+        const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
+        const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(styledPrompt)).imageDataUrl;
         const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);
         canvas.discardActiveObject();
@@ -1761,7 +1786,8 @@ export function useFabricCanvas() {
 
       if (command.intent === 'ai_brush_draw') {
         const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
-        const draft = await generateSketchDraft(command.prompt);
+        const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
+        const draft = await generateSketchDraft(styledPrompt);
         const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
         canvas.add(imageObject);
         canvas.discardActiveObject();

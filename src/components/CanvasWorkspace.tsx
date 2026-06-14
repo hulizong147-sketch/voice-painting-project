@@ -63,43 +63,37 @@ export function CanvasWorkspace({
         >
           {isListening ? <MicOff size={18} /> : <Mic size={18} />}
         </button>
-        <div className="toolbar-control-group" aria-label="快速颜色">
+        <div className="toolbar-control-group readonly" aria-label="当前颜色">
           {toolbarColors.map((color) => (
-            <button
+            <span
               className={currentColor === color.value ? 'color-swatch active' : 'color-swatch'}
               key={color.value}
-              type="button"
-              title={`切换为${color.label}`}
-              onClick={() => void runCommand({ intent: 'set_color', color: color.value }, `换成${color.label}`)}
+              title={`语音说：换成${color.label}`}
             >
               <span style={{ background: color.value }} />
-            </button>
+            </span>
           ))}
         </div>
-        <div className="toolbar-control-group" aria-label="画笔粗细">
+        <div className="toolbar-control-group readonly" aria-label="当前画笔粗细">
           {toolbarStrokeWidths.map((width) => (
-            <button
+            <span
               className={currentStrokeWidth === width ? 'stroke-width-button active' : 'stroke-width-button'}
               key={width}
-              type="button"
-              title={`画笔 ${width}px`}
-              onClick={() => void runCommand({ intent: 'set_stroke_width', width }, `画笔 ${width}`)}
+              title={`语音说：画笔粗细 ${width}`}
             >
               {width}
-            </button>
+            </span>
           ))}
         </div>
-        <div className="style-control-group" aria-label="画风">
+        <div className="style-control-group readonly" aria-label="当前画风">
           {drawingStyleOptions.map((style) => (
-            <button
+            <span
               className={currentDrawingStyle === style.id ? 'style-button active' : 'style-button'}
               key={style.id}
-              type="button"
-              title={`切换到${style.label}画风`}
-              onClick={() => void runCommand({ intent: 'set_drawing_style', style: style.id }, `切换到${style.label}画风`)}
+              title={`语音说：切换到${style.label}画风`}
             >
               {style.label}
-            </button>
+            </span>
           ))}
         </div>
         <button
