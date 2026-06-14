@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { Buffer } from 'node:buffer';
 import { existsSync, readFileSync } from 'node:fs';
+import { extname } from 'node:path';
 
 function loadDotEnv() {
   if (!existsSync('.env')) {
@@ -55,6 +56,35 @@ function sendAudio(response, contentType, payload) {
     'Content-Type': contentType,
   });
   response.end(payload);
+}
+
+function sendFile(response, contentType, payload) {
+  response.writeHead(200, {
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'no-store',
+    'Content-Type': contentType,
+  });
+  response.end(payload);
+}
+
+function getImageContentType(filePath) {
+  const ext = extname(filePath).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') {
+    return 'image/jpeg';
+  }
+  if (ext === '.webp') {
+    return 'image/webp';
+  }
+  if (ext === '.svg') {
+    return 'image/svg+xml';
+  }
+  return 'image/png';
+}
+
+function demoAssetPath(name) {
+  const baseDir = process.env.DEMO_RECORDING_ASSET_DIR ?? 'D:\\VoiceDrawDemoAssets';
+  const fileName = name === 'squirrel-hat' ? 'squirrel_hat.png' : 'squirrel.png';
+  return `${baseDir.replace(/[\\/]$/, '')}\\${fileName}`;
 }
 
 function readJson(request) {
@@ -362,6 +392,21 @@ async function generateSketchDraft(body) {
 }
 
 const server = createServer(async (request, response) => {
+  if (request.method === 'GET' && request.url?.startsWith('/api/demo-assets/')) {
+    try {
+      const name = decodeURIComponent(request.url.split('/').pop() ?? '');
+      const filePath = demoAssetPath(name);
+      if (!existsSync(filePath)) {
+        sendJson(response, 404, { error: `Demo asset not found: ${filePath}` });
+        return;
+      }
+      sendFile(response, getImageContentType(filePath), readFileSync(filePath));
+    } catch (error) {
+      sendJson(response, 500, { error: error instanceof Error ? error.message : 'Unknown demo asset error' });
+    }
+    return;
+  }
+
   if (request.method === 'OPTIONS') {
     sendJson(response, 204, {});
     return;

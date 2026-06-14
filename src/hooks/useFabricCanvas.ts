@@ -17,6 +17,13 @@ import {
 } from 'fabric';
 import { drawingStyleMap, getDrawingStyleLabel } from '../drawingStyles';
 import { generateSketchDraft } from '../services/aiSketch';
+import {
+  demoRecordingMode,
+  demoSquirrelHatImageUrl,
+  demoSquirrelImageUrl,
+  isSquirrelPrompt,
+  waitForDemoDelay,
+} from '../services/demoRecording';
 import { traceDraftToPathCommands } from '../services/traceDraft';
 import type { DrawingCommand, ShapeKind } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
@@ -1781,6 +1788,18 @@ export function useFabricCanvas() {
 
       if (command.intent === 'ai_brush_draw') {
         const center = resolveRequestedPoint(command, { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 });
+        if (demoRecordingMode && isSquirrelPrompt(command.prompt)) {
+          await waitForDemoDelay();
+          const imageObject = await createDraftImageObject(demoSquirrelImageUrl, center.x, center.y, 430, command.prompt);
+          canvas.add(imageObject);
+          canvas.discardActiveObject();
+          canvas.setActiveObject(imageObject);
+          canvas.requestRenderAll();
+          lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
+          pushHistory();
+          return '已把 AI 草稿图片放到画布';
+        }
+
         const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
         const draft = await generateSketchDraft(styledPrompt);
         const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
@@ -1830,6 +1849,23 @@ export function useFabricCanvas() {
           .map((object) => String(object.get('aiPrompt') ?? ''))
           .filter(Boolean)
           .join(' ');
+        if (demoRecordingMode && command.edit === 'hat' && isSquirrelPrompt(promptContext)) {
+          await waitForDemoDelay();
+          referenceObjects.forEach((object) => canvas.remove(object));
+          const center = {
+            x: referenceBounds.left + referenceBounds.width / 2,
+            y: referenceBounds.top + referenceBounds.height / 2,
+          };
+          const imageObject = await createDraftImageObject(demoSquirrelHatImageUrl, center.x, center.y, 430, promptContext || '松鼠 戴帽子');
+          canvas.add(imageObject);
+          canvas.discardActiveObject();
+          canvas.setActiveObject(imageObject);
+          canvas.requestRenderAll();
+          lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
+          pushHistory();
+          return '已生成加上帽子的松鼠图片';
+        }
+
         const objects = createIncrementalStrokePaths(command.edit, referenceBounds, promptContext);
         if (objects.length === 0) {
           return '这个局部修改还没支持';

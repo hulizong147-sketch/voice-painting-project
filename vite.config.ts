@@ -8,6 +8,7 @@ export default defineConfig({
       '/api/asr': 'http://127.0.0.1:3001',
       '/api/tts': 'http://127.0.0.1:3001',
       '/api/sketch': 'http://127.0.0.1:3001',
+      '/api/demo-assets': 'http://127.0.0.1:3001',
     },
   },
   build: {
