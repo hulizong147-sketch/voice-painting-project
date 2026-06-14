@@ -222,6 +222,18 @@ async function imageUrlToDataUrl(url) {
   return `data:${contentType};base64,${payload.toString('base64')}`;
 }
 
+async function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function normalizeImageDataUrl(image) {
   if (image?.b64_json) {
     return `data:image/png;base64,${image.b64_json}`;
@@ -234,22 +246,30 @@ function normalizeImageDataUrl(image) {
 
 async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat }) {
   const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
-  const response = await fetch(`${normalizedBaseUrl}/v1/images/generations`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      prompt,
-      size,
-      ...(responseFormat ? { response_format: responseFormat } : {}),
+  const response = await withTimeout(
+    fetch(`${normalizedBaseUrl}/v1/images/generations`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        size,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+      }),
     }),
-  });
+    60000,
+    'Image generation request timed out',
+  );
   const data = await response.json();
   const image = data?.data?.[0];
-  const imageDataUrl = await normalizeImageDataUrl(image);
+  const imageDataUrl = await withTimeout(
+    normalizeImageDataUrl(image),
+    20000,
+    'Image download timed out',
+  );
   if (!response.ok || !imageDataUrl) {
     throw new Error(data?.error?.message ?? `Image generation failed with HTTP ${response.status}`);
   }
