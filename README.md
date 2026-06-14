@@ -1,18 +1,44 @@
-# VoiceDraw
+# VoiceDraw AI 语音绘图工具
 
-VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Baidu speech APIs, Web Speech API fallbacks, and a local rule-based Chinese NLU parser.
+VoiceDraw 是围绕“AI 语音绘图工具”题目开发的浏览器绘图应用。用户可以通过语音指令完成图形创建、对象选择、编辑、布局、导出以及 AI 草稿生成等操作，核心目标是验证纯语音绘图场景下的指令理解、容错、响应延迟和复杂指令拆解能力。
 
-## Run
+## 功能概览
+
+- 语音输入：支持百度短语音识别，浏览器 Web Speech API 作为降级方案。
+- 指令理解：内置中文规则解析器，支持颜色、形状、数量、位置、选择、编辑、撤销重做等常见口语表达。
+- 复杂指令：支持“画一个蓝色三角形，然后画一个黄色星星”这类多步语音拆解并顺序执行。
+- 画布能力：基于 Fabric.js 实现矢量画布、对象选择、移动、缩放、旋转、翻转、对齐、分布、编组、锁定、隐藏、图层调整。
+- 画风状态：支持默认、二次元、水墨、简笔画风，并在顶部状态栏显示当前画风。
+- AI 草稿：接入 Right Code 绘图接口，可根据语音/文本 prompt 生成 AI 草稿并放入画布。
+- 局部修改：支持“加尾巴、加耳朵、戴帽子、加胡须、眼睛变大、线条加粗”等局部编辑，其中简单局部编辑会叠加新图层，避免重绘破坏原图细节。
+- 反馈闭环：命令执行后展示文字反馈，并通过百度 TTS 或浏览器语音合成播报结果。
+- 文件能力：支持 PNG、SVG 导出，支持 JSON 工程保存与恢复。
+
+## 技术栈
+
+- 前端：React 18、TypeScript、Vite
+- 画布：Fabric.js
+- 状态管理：Zustand
+- 图标：lucide-react
+- 语音识别：百度智能云短语音识别，浏览器 Web Speech API fallback
+- 语音播报：百度 TTS，浏览器 SpeechSynthesis fallback
+- AI 生图：Right Code Draw API，OpenAI Images API fallback
+
+## 快速运行
 
 ```bash
 npm install
 copy .env.example .env
-npm run dev -- --port 5173
+npm run dev
 ```
 
-Open http://127.0.0.1:5173.
+启动后打开：
 
-On Windows, if terminal output shows garbled Chinese, switch the shell to UTF-8 before starting dev:
+```text
+http://127.0.0.1:5173/
+```
+
+如果 Windows 终端中文显示乱码，可先执行：
 
 ```powershell
 chcp 65001
@@ -20,162 +46,127 @@ $OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 npm run dev
 ```
 
-For Baidu speech recognition and voice feedback, create a Baidu Intelligent Cloud speech app, enable short speech recognition and online text-to-speech, then fill these values in `.env`:
+## 环境变量
+
+复制 `.env.example` 为 `.env`，按需填写：
 
 ```bash
-BAIDU_ASR_API_KEY=your_api_key
-BAIDU_ASR_SECRET_KEY=your_secret_key
+BAIDU_ASR_API_KEY=your_baidu_api_key
+BAIDU_ASR_SECRET_KEY=your_baidu_secret_key
 BAIDU_ASR_CUID=voicedraw-web
 BAIDU_ASR_DEV_PID=1537
+
 BAIDU_TTS_CUID=voicedraw-web
 BAIDU_TTS_PER=0
 BAIDU_TTS_SPD=5
 BAIDU_TTS_PIT=5
 BAIDU_TTS_VOL=7
 BAIDU_TTS_AUE=3
+
 RIGHT_CODES_DRAW_API_KEY=your_right_codes_draw_key
 RIGHT_CODES_DRAW_BASE_URL=https://www.right.codes/draw
 RIGHT_CODES_DRAW_MODEL=gpt-image-2
 RIGHT_CODES_DRAW_SIZE=1024x1024
 RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
-OPENAI_API_KEY=your_openai_api_key
+
+OPENAI_API_KEY=
 OPENAI_IMAGE_MODEL=gpt-image-1
 OPENAI_IMAGE_SIZE=1024x1024
+
 ENABLE_LOCAL_SKETCH_FALLBACK=false
 ```
 
-`BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
+说明：
 
-`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, AI draft generation is disabled and the app shows a configuration error. Set `ENABLE_LOCAL_SKETCH_FALLBACK=true` only when you want to test the tracing pipeline with a local placeholder sketch.
+- 百度 ASR/TTS 用于语音识别和语音反馈。
+- Right Code Draw API 用于 AI 草稿生成。
+- OpenAI Images 是备用生图接口。
+- `ENABLE_LOCAL_SKETCH_FALLBACK=true` 只建议本地调试时使用，正式演示建议关闭，避免出现占位草稿。
 
-## Implemented
+## 常用语音指令
 
-- Fabric.js vector canvas with circle, rectangle, triangle, line, star, and text creation.
-- Text object editing and basic text styling for selected text boxes.
-- Chinese text and voice command parsing for basic drawing commands.
-- Sequence drawing for simple repeated layouts such as rows and columns.
-- Baidu speech recognition through a local backend, with browser Web Speech fallback.
-- Baidu text-to-speech feedback after command execution, with SpeechSynthesis fallback.
-- Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
-- Current drawing context for fill color, stroke color, stroke width, opacity, drawing style, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color, stroke width, and drawing style.
-- Single-step and multi-step undo/redo based on canvas snapshots.
-- Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back, with toolbar shortcuts for common selection, grouping, and locking actions.
-- Natural language object selection by color, shape, and simple positional words.
-- Relative drawing near the current selection.
-- Built-in smiley and bar chart templates with toolbar shortcuts.
-- Additional templates for flowcharts, suns, and houses.
-- Free drawing mode using Fabric PencilBrush with voice and toolbar toggles.
-- AI draft brush replica: generate a sketch draft, trace the dark lines, and replay them as Fabric Path brush strokes.
-- Grid visibility toggle from voice commands, toolbar controls, and status display.
-- PNG export.
-- SVG export.
-- Canvas JSON save and restore from voice commands and toolbar buttons.
-- New canvas command that resets the workspace and history.
-- Batch color updates by simple object filters.
-- Correction commands that revise the most recently touched objects.
-- Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
-- Canvas background color command.
-- Canvas size commands for exact dimensions and common presets.
-- Listening mode switch between continuous recognition and push-to-talk.
-- In-app command help panel with voice/text commands for showing or hiding help.
-- Command history items can be copied, replayed, filtered, imported, exported, or cleared from the side panel.
-- Manual text command fallback for browsers without speech recognition.
+基础绘图：
 
-## Example Commands
+- “画一个红色的圆”
+- “画三个蓝色三角形排成一排”
+- “画一个黄色星星”
+- “添加文字 VoiceDraw”
+- “画一个房子”
+- “画一个流程图”
 
-- 画一个红色的圆
-- 画 5 个红色圆排成一排
-- 画三个蓝色矩形排成一列
-- 添加标题 VoiceDraw
-- 写文字 “草图说明”
-- 把文字改成 “最终标题”
-- 字号 48
-- 加粗文字
-- 画一个蓝色三角形，然后画一个黄色星星
-- 换成绿色
-- 描边改成蓝色
-- 画布背景改成灰色
-- 画笔粗细 8
-- 透明度 50%
-- 半透明
-- 切换成二次元画风
-- 以后用水墨画风
-- 设置为简笔画风
-- 向右移动一点
-- 放大两倍
-- 旋转 45 度
-- 水平翻转
-- 垂直翻转
-- 复制选中
-- 粘贴
-- 复制一份
-- 组合
-- 取消组合
-- 锁定选中
-- 解锁
-- 隐藏选中
-- 显示全部对象
-- 选中隐藏对象
-- 选中可见对象
-- 反选
-- 取消选择
-- 左对齐
-- 水平居中
-- 横向均匀分布
-- 排成一列
-- 置顶
-- 置底
-- 选中红色的圆
-- 选中最左边的圆
-- 画一个笑脸
-- 画一个柱状图
-- 画一个流程图
-- 画一个太阳
-- 画一个房子
-- 画一个女人的头
-- 画一个二次元的人
-- 画一个二次元猫耳女孩头像
-- AI画笔画一个长发二次元少女头像
-- 把所有红色圆改成蓝色
-- 导出 SVG
-- 保存 JSON 工程
-- 打开 JSON 工程
-- 新建画布
-- 不对，改成深蓝色
-- 等一下，放大一点
-- 不是，旋转 30 度
-- 放大画布
-- 缩小画布
-- 适应屏幕
-- 画布改成 1280x720
-- 横版画布
-- 开启吸附
-- 画布向右移动
-- 切换到按住说话，然后按住空格发出命令
-- 帮助
-- 隐藏帮助
-- 删除选中
-- 删除所有红色圆
-- 撤销
-- 撤销 3 步
-- 重做
-- 重做 2 步
-- 开始画
-- 停笔
-- 隐藏网格
-- 导出 PNG
+选择与编辑：
 
-## Partially Implemented
+- “选中红色的圆”
+- “选中最左边的圆”
+- “向右移动一点”
+- “放大一点”
+- “旋转 45 度”
+- “水平翻转”
+- “左对齐”
+- “横向均匀分布”
+- “复制选中”
+- “粘贴”
+- “删除选中”
 
-- Voice capture uses the browser Web Speech API. Whisper and third-party ASR are not integrated yet.
-- NLU uses deterministic local rules. LLM fallback is not integrated yet.
-- Context management covers current color, stroke width, selection count, grid, free drawing, history, and feedback. Pronoun/reference resolution is not implemented.
-- Natural language selection supports simple color, shape, and edge-position filters. More complex phrases such as "第二个圆" or "离三角形最近的矩形" are not implemented yet.
+样式与画布：
 
-## Not Yet Implemented
+- “换成蓝色”
+- “描边改成黑色”
+- “画笔粗细 6”
+- “透明度 50%”
+- “切换成二次元画风”
+- “以后用水墨画风”
+- “显示网格”
+- “开启吸附”
+- “画布改成 1280x720”
+- “适应屏幕”
 
-- Backend FastAPI/WebSocket service.
-- Offline Whisper pipeline.
-- LLM-based generative drawing.
-- Advanced spatial relation understanding.
-- Accessibility audit automation and latency benchmarking.
+AI 绘图与局部修改：
+
+- “画一个松鼠”
+- “画一个二次元少女头像”
+- “AI 画笔画一个长发二次元少女头像线稿”
+- “给它戴帽子”
+- “给它加胡须”
+- “眼睛变大一点”
+- “线条加粗”
+
+历史与导出：
+
+- “撤销”
+- “撤销三步”
+- “重做”
+- “导出 PNG”
+- “导出 SVG”
+- “保存 JSON 工程”
+- “打开 JSON 工程”
+- “新建画布”
+
+## 项目结构
+
+```text
+server/                 本地后端代理，负责百度 ASR/TTS 和 AI 生图接口
+scripts/dev.mjs          同时启动后端代理和 Vite 前端
+src/App.tsx              应用主界面、语音命令入口和侧栏
+src/components/          画布工作区和 AI 草稿测试面板
+src/hooks/               语音识别和 Fabric 画布执行逻辑
+src/nlu/                 中文命令解析与颜色词识别
+src/services/            AI 草稿、路径追踪、语音播报
+src/store/               全局绘图状态
+src/types.ts             指令和状态类型定义
+docs/                    设计文档
+```
+
+## 设计文档
+
+完整设计说明见：
+
+[docs/AI语音绘图工具_设计文档.md](docs/AI语音绘图工具_设计文档.md)
+
+## 已知限制
+
+- 浏览器安全限制下，首次使用语音需要用户手动授权麦克风。
+- 百度短语音识别对噪声、麦克风距离和口音较敏感，嘈杂环境下识别质量会下降。
+- 当前 NLU 主要是规则解析，能覆盖比赛演示和常见绘图口令，但还不是通用自然语言智能体。
+- AI 生图耗时取决于外部接口，复杂 prompt 可能超过 5 秒。
+- “只局部改动不改变原图细节”目前对帽子、胡须、尾巴等使用叠加图层策略，更高级的精确局部编辑仍需图像分割或局部 inpainting 能力。
