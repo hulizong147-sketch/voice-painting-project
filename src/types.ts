@@ -66,6 +66,7 @@ export type DrawingCommand =
   | { intent: 'set_visibility_selected'; visible: boolean }
   | { intent: 'show_all_objects' }
   | { intent: 'move_selected'; dx: number; dy: number }
+  | { intent: 'place_selected_on_target'; position: 'head' | 'top' }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
   | { intent: 'flip_selected'; axis: 'horizontal' | 'vertical' }
@@ -105,7 +106,12 @@ export type DrawingCommand =
   | { intent: 'fit_canvas' }
   | { intent: 'set_canvas_size'; width: number; height: number }
   | { intent: 'pan_canvas'; dx: number; dy: number }
-  | { intent: 'ai_brush_draw'; prompt: string }
+  | { intent: 'ai_brush_draw'; prompt: string; x?: number; y?: number }
+  | { intent: 'place_ai_draft_image'; prompt: string; imageDataUrl?: string; x?: number; y?: number }
+  | {
+      intent: 'incremental_edit';
+      edit: 'tail' | 'ears' | 'hat' | 'bigger_eyes' | 'thicker_lines' | 'whiskers';
+    }
   | {
       intent: 'draw_template';
       template:

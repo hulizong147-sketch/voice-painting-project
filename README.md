@@ -1,181 +1,51 @@
-# VoiceDraw
+# VoiceDraw AI 语音绘图工具
 
-VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Baidu speech APIs, Web Speech API fallbacks, and a local rule-based Chinese NLU parser.
+VoiceDraw 是一个浏览器端 AI 语音绘图工具。用户主要通过语音完成绘图、状态调整、AI 生图、局部修改和导出。
 
-## Run
+## 核心功能
+
+- 百度 ASR / 浏览器 Web Speech 语音识别
+- 本地中文指令解析与复杂指令拆解
+- Fabric.js 画布绘制、选择、编辑、撤销和导出
+- 当前颜色、画笔粗细、画风等状态通过语音调整
+- AI 图片默认生成在画布中心，并跟随当前颜色、画笔和画风
+- 支持“给它戴帽子”等局部叠加修改
+
+## 运行
 
 ```bash
 npm install
 copy .env.example .env
-npm run dev -- --port 5173
-```
-
-Open http://127.0.0.1:5173.
-
-On Windows, if terminal output shows garbled Chinese, switch the shell to UTF-8 before starting dev:
-
-```powershell
-chcp 65001
-$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 npm run dev
 ```
 
-For Baidu speech recognition and voice feedback, create a Baidu Intelligent Cloud speech app, enable short speech recognition and online text-to-speech, then fill these values in `.env`:
+打开：
 
-```bash
-BAIDU_ASR_API_KEY=your_api_key
-BAIDU_ASR_SECRET_KEY=your_secret_key
-BAIDU_ASR_CUID=voicedraw-web
-BAIDU_ASR_DEV_PID=1537
-BAIDU_TTS_CUID=voicedraw-web
-BAIDU_TTS_PER=0
-BAIDU_TTS_SPD=5
-BAIDU_TTS_PIT=5
-BAIDU_TTS_VOL=7
-BAIDU_TTS_AUE=3
-RIGHT_CODES_DRAW_API_KEY=your_right_codes_draw_key
-RIGHT_CODES_DRAW_BASE_URL=https://www.right.codes/draw
-RIGHT_CODES_DRAW_MODEL=gpt-image-2
-RIGHT_CODES_DRAW_SIZE=1024x1024
-RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_IMAGE_MODEL=gpt-image-1
-OPENAI_IMAGE_SIZE=1024x1024
-ENABLE_LOCAL_SKETCH_FALLBACK=false
+```text
+http://127.0.0.1:5173/
 ```
 
-`BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
+## 常用语音指令
 
-`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, AI draft generation is disabled and the app shows a configuration error. Set `ENABLE_LOCAL_SKETCH_FALLBACK=true` only when you want to test the tracing pipeline with a local placeholder sketch.
+```text
+切换成水墨画风
+换成棕色
+画笔粗细 6
+画一个松鼠
+给它戴帽子
+画一个红色的圆，然后画三个蓝色三角形排成一排
+选中红色的圆，然后向右移动一点，然后放大一点
+撤销
+重做
+导出 PNG
+```
 
-## Implemented
+## 配置
 
-- Fabric.js vector canvas with circle, rectangle, triangle, line, star, and text creation.
-- Text object editing and basic text styling for selected text boxes.
-- Chinese text and voice command parsing for basic drawing commands.
-- Sequence drawing for simple repeated layouts such as rows and columns.
-- Baidu speech recognition through a local backend, with browser Web Speech fallback.
-- Baidu text-to-speech feedback after command execution, with SpeechSynthesis fallback.
-- Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
-- Current drawing context for fill color, stroke color, stroke width, opacity, drawing style, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color, stroke width, and drawing style.
-- Single-step and multi-step undo/redo based on canvas snapshots.
-- Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back, with toolbar shortcuts for common selection, grouping, and locking actions.
-- Natural language object selection by color, shape, and simple positional words.
-- Relative drawing near the current selection.
-- Built-in smiley and bar chart templates with toolbar shortcuts.
-- Additional templates for flowcharts, suns, and houses.
-- Free drawing mode using Fabric PencilBrush with voice and toolbar toggles.
-- AI draft brush replica: generate a sketch draft, trace the dark lines, and replay them as Fabric Path brush strokes.
-- Grid visibility toggle from voice commands, toolbar controls, and status display.
-- PNG export.
-- SVG export.
-- Canvas JSON save and restore from voice commands and toolbar buttons.
-- New canvas command that resets the workspace and history.
-- Batch color updates by simple object filters.
-- Correction commands that revise the most recently touched objects.
-- Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
-- Canvas background color command.
-- Canvas size commands for exact dimensions and common presets.
-- Listening mode switch between continuous recognition and push-to-talk.
-- In-app command help panel with voice/text commands for showing or hiding help.
-- Command history items can be copied, replayed, filtered, imported, exported, or cleared from the side panel.
-- Manual text command fallback for browsers without speech recognition.
+复制 `.env.example` 为 `.env` 后填写百度语音和 AI 生图接口密钥。
 
-## Example Commands
+## 设计文档
 
-- 画一个红色的圆
-- 画 5 个红色圆排成一排
-- 画三个蓝色矩形排成一列
-- 添加标题 VoiceDraw
-- 写文字 “草图说明”
-- 把文字改成 “最终标题”
-- 字号 48
-- 加粗文字
-- 画一个蓝色三角形，然后画一个黄色星星
-- 换成绿色
-- 描边改成蓝色
-- 画布背景改成灰色
-- 画笔粗细 8
-- 透明度 50%
-- 半透明
-- 切换成二次元画风
-- 以后用水墨画风
-- 设置为简笔画风
-- 向右移动一点
-- 放大两倍
-- 旋转 45 度
-- 水平翻转
-- 垂直翻转
-- 复制选中
-- 粘贴
-- 复制一份
-- 组合
-- 取消组合
-- 锁定选中
-- 解锁
-- 隐藏选中
-- 显示全部对象
-- 选中隐藏对象
-- 选中可见对象
-- 反选
-- 取消选择
-- 左对齐
-- 水平居中
-- 横向均匀分布
-- 排成一列
-- 置顶
-- 置底
-- 选中红色的圆
-- 选中最左边的圆
-- 画一个笑脸
-- 画一个柱状图
-- 画一个流程图
-- 画一个太阳
-- 画一个房子
-- 画一个女人的头
-- 画一个二次元的人
-- 画一个二次元猫耳女孩头像
-- AI画笔画一个长发二次元少女头像
-- 把所有红色圆改成蓝色
-- 导出 SVG
-- 保存 JSON 工程
-- 打开 JSON 工程
-- 新建画布
-- 不对，改成深蓝色
-- 等一下，放大一点
-- 不是，旋转 30 度
-- 放大画布
-- 缩小画布
-- 适应屏幕
-- 画布改成 1280x720
-- 横版画布
-- 开启吸附
-- 画布向右移动
-- 切换到按住说话，然后按住空格发出命令
-- 帮助
-- 隐藏帮助
-- 删除选中
-- 删除所有红色圆
-- 撤销
-- 撤销 3 步
-- 重做
-- 重做 2 步
-- 开始画
-- 停笔
-- 隐藏网格
-- 导出 PNG
+见仓库根目录：
 
-## Partially Implemented
-
-- Voice capture uses the browser Web Speech API. Whisper and third-party ASR are not integrated yet.
-- NLU uses deterministic local rules. LLM fallback is not integrated yet.
-- Context management covers current color, stroke width, selection count, grid, free drawing, history, and feedback. Pronoun/reference resolution is not implemented.
-- Natural language selection supports simple color, shape, and edge-position filters. More complex phrases such as "第二个圆" or "离三角形最近的矩形" are not implemented yet.
-
-## Not Yet Implemented
-
-- Backend FastAPI/WebSocket service.
-- Offline Whisper pipeline.
-- LLM-based generative drawing.
-- Advanced spatial relation understanding.
-- Accessibility audit automation and latency benchmarking.
+[AI语音绘图工具_设计文档.md](AI语音绘图工具_设计文档.md)

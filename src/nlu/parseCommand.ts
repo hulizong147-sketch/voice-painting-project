@@ -47,13 +47,60 @@ function findDrawingStyle(text: string) {
   return drawingStyles.find(([, pattern]) => pattern.test(text))?.[0];
 }
 
+function normalizeRecognizedText(rawText: string) {
+  return rawText
+    .replace(/\s+/g, '')
+    .replace(/^(深沉|声称|生成成|生存|生产|先成|形成|身成|神成)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '生成$2')
+    .replace(/^(帮我)?(花|话)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '画$3')
+    .replace(/^回执/, '绘制');
+}
+
 function findAiBrushPrompt(rawText: string) {
   return rawText
     .replace(/\s+/g, '')
     .replace(/^(请|帮我|给我)?(用)?(AI|ai|人工智能)?(生成)?(一张)?(草稿|参考图)?(再)?(用)?(画笔|笔刷)?(复刻|描摹|临摹|画)/, '')
     .replace(/^(AI|ai)?(画笔|笔刷)(画|生成|复刻)/, '')
-    .replace(/^(生成|画)(一个|一张|一幅)?/, '')
+    .replace(/^(帮我|请|给我)?(画|绘制|生成|做|来)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '')
+    .replace(/^(一个|一只|一条|一张|一幅|个|只|条|张|幅)/, '')
     .trim();
+}
+
+function isGeneralDrawingRequest(text: string) {
+  return /(画|绘制|生成|帮我画|给我画|请画|来个|做个)/.test(text)
+    && !/(撤销|重做|删除|选中|选择|复制|粘贴|组合|取消组合|锁定|解锁|隐藏|显示|导出|保存|打开|新建|清空|放大|缩小|移动|旋转|翻转|对齐|分布|颜色|换成|改成|设为|画风|风格|样式|背景|透明|画笔粗细|字号|文字内容)/.test(text);
+}
+
+function isLikelyDrawableSubject(text: string) {
+  return text.length >= 2
+    && text.length <= 12
+    && !findShape(text)
+    && !findColor(text)
+    && !/(撤销|重做|删除|选中|选择|复制|粘贴|导出|保存|打开|清空|帮助|颜色|画风|风格)/.test(text);
+}
+
+function findIncrementalEdit(text: string): Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'] | undefined {
+  if (!/(加|添加|画|补|戴|变|改|弄|加强|加粗|放大|变大)/.test(text)) {
+    return undefined;
+  }
+  if (/尾巴|大尾巴|松鼠尾|狐狸尾/.test(text)) {
+    return 'tail';
+  }
+  if (/耳朵|猫耳|兽耳/.test(text)) {
+    return 'ears';
+  }
+  if (/帽子|头饰|发饰/.test(text)) {
+    return 'hat';
+  }
+  if (/眼睛.*(大|放大|更大)|大眼睛|眼睛变大/.test(text)) {
+    return 'bigger_eyes';
+  }
+  if (/胡须|胡子/.test(text)) {
+    return 'whiskers';
+  }
+  if (/线条.*(粗|加粗|更粗)|描边.*(粗|加粗|更粗)|画笔.*(粗|加粗|更粗)/.test(text)) {
+    return 'thicker_lines';
+  }
+  return undefined;
 }
 
 function findSize(text: string) {
@@ -140,20 +187,22 @@ function findUpdatedTextContent(rawText: string) {
 }
 
 export function parseSingleCommand(rawText: string): DrawingCommand {
-  const text = rawText.replace(/\s+/g, '').trim();
+  const normalizedRawText = normalizeRecognizedText(rawText);
+  const text = normalizedRawText.replace(/\s+/g, '').trim();
   const requestedDrawingStyle = findDrawingStyle(text);
   if (requestedDrawingStyle && /画风|风格|样式|以后|接下来|切换|换成|改成|设为|设置|用/.test(text)) {
     return { intent: 'set_drawing_style', style: requestedDrawingStyle };
   }
-  if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(rawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
-    const prompt = findAiBrushPrompt(rawText);
-    return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
+  const incrementalEdit = findIncrementalEdit(text);
+  if (incrementalEdit) {
+    return { intent: 'incremental_edit', edit: incrementalEdit };
   }
-  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(rawText)) {
-    return { intent: 'ai_brush_draw', prompt: rawText.trim() };
+  if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(normalizedRawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
+    const prompt = findAiBrushPrompt(normalizedRawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim(), ...findPosition(text) };
   }
-  if (/(女人|女性|女生|女孩|女头像|女人的头|女性头像|女生头像|女孩的脸|女孩头像)/.test(rawText) && /(头|头像|脸|面部)/.test(rawText)) {
-    return { intent: 'draw_template', template: 'woman_head' };
+  if (/(二次元|动漫|动画|anime|卡通)/i.test(normalizedRawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(normalizedRawText)) {
+    return { intent: 'ai_brush_draw', prompt: normalizedRawText.trim(), ...findPosition(text) };
   }
   if (!text) {
     return { intent: 'unknown', reason: '没有识别到命令' };
@@ -332,6 +381,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/置底|放到最下面|放到最底下|移到最下面|移到最底下/.test(text)) {
     return { intent: 'send_to_back' };
   }
+  if (/(头上|脑袋上|头顶|顶部)/.test(text) && /(放|移动|移|挪|戴|放到|移动到|移到|挪到)/.test(text)) {
+    return { intent: 'place_selected_on_target', position: /头上|脑袋上|头顶/.test(text) ? 'head' : 'top' };
+  }
   if (/上移一层|放到上面/.test(text)) {
     return { intent: 'bring_forward' };
   }
@@ -504,8 +556,17 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     };
   }
 
-  if (color && /换成|改成|设为|颜色|用/.test(text)) {
+  if (color && /换成|改成|改为|修改为|变成|变为|设为|设置为|颜色|用/.test(text)) {
     return { intent: 'set_color', color };
+  }
+
+  if (isGeneralDrawingRequest(text)) {
+    const prompt = findAiBrushPrompt(normalizedRawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim(), ...findPosition(text) };
+  }
+
+  if (isLikelyDrawableSubject(text)) {
+    return { intent: 'ai_brush_draw', prompt: text, ...findPosition(text) };
   }
 
   return { intent: 'unknown', reason: `还不能理解：“${rawText}”` };

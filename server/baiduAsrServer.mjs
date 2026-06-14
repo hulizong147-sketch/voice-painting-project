@@ -254,7 +254,7 @@ function normalizeImageDataUrl(image) {
   return null;
 }
 
-async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat }) {
+async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat, images = [] }) {
   const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
   const generationUrl = normalizedBaseUrl.endsWith('/v1/images/generations')
     ? normalizedBaseUrl
@@ -271,7 +271,7 @@ async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, re
       body: JSON.stringify({
         model,
         prompt,
-        image: [],
+        image: images,
         size,
         ...(responseFormat ? { response_format: responseFormat } : {}),
       }),
@@ -297,6 +297,9 @@ async function generateSketchDraft(body) {
   if (!prompt) {
     throw new Error('Missing sketch prompt');
   }
+  const referenceImage = typeof body.referenceImageDataUrl === 'string' && body.referenceImageDataUrl.startsWith('data:image/')
+    ? body.referenceImageDataUrl
+    : null;
 
   const rightCodesApiKey = process.env.RIGHT_CODES_DRAW_API_KEY ?? process.env.RIGHT_CODES_API_KEY;
   const openAiApiKey = process.env.OPENAI_API_KEY;
@@ -316,8 +319,11 @@ async function generateSketchDraft(body) {
   const imagePrompt = [
     'Clean black and white anime line art sketch on a white background.',
     'Use confident readable outlines, minimal shading, no text, no watermark.',
+    referenceImage
+      ? 'Use the provided reference image as the current canvas. Preserve the main subject composition and modify it according to the instruction instead of creating an unrelated new image.'
+      : '',
     `Subject: ${prompt}`,
-  ].join(' ');
+  ].filter(Boolean).join(' ');
 
   if (rightCodesApiKey) {
     const rightCodesModel = process.env.RIGHT_CODES_DRAW_MODEL ?? process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-2';
@@ -328,6 +334,7 @@ async function generateSketchDraft(body) {
       prompt: imagePrompt,
       size: process.env.RIGHT_CODES_DRAW_SIZE ?? process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
       responseFormat: process.env.RIGHT_CODES_DRAW_RESPONSE_FORMAT ?? 'url',
+      images: referenceImage ? [referenceImage] : [],
     });
     return {
       imageDataUrl,
@@ -344,6 +351,7 @@ async function generateSketchDraft(body) {
     prompt: imagePrompt,
     size: process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
     responseFormat: 'b64_json',
+    images: referenceImage ? [referenceImage] : [],
   });
   return {
     imageDataUrl,

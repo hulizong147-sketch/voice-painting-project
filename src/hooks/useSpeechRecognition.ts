@@ -37,11 +37,11 @@ declare global {
 }
 
 const TARGET_SAMPLE_RATE = 16000;
-const VOICE_RMS_THRESHOLD = 0.012;
-const CONTINUOUS_SILENCE_MS = 900;
-const CONTINUOUS_MAX_RECORDING_MS = 7000;
-const CONTINUOUS_MIN_RECORDING_MS = 350;
-const PRE_ROLL_BUFFER_COUNT = 8;
+const VOICE_RMS_THRESHOLD = 0.01;
+const CONTINUOUS_SILENCE_MS = 1300;
+const CONTINUOUS_MAX_RECORDING_MS = 9000;
+const CONTINUOUS_MIN_RECORDING_MS = 550;
+const PRE_ROLL_BUFFER_COUNT = 12;
 
 function mergeBuffers(buffers: Float32Array[]) {
   const length = buffers.reduce((sum, buffer) => sum + buffer.length, 0);

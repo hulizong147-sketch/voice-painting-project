@@ -5,14 +5,14 @@ export interface SketchDraftResponse {
   prompt: string;
 }
 
-export async function generateSketchDraft(prompt: string) {
+export async function generateSketchDraft(prompt: string, referenceImageDataUrl?: string) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 75_000);
   try {
     const response = await fetch('/api/sketch/draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, referenceImageDataUrl }),
       signal: controller.signal,
     });
     const data = await response.json().catch(() => ({}));

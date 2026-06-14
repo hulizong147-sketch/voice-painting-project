@@ -3,6 +3,7 @@ import {
   ActiveSelection,
   Canvas,
   Circle,
+  FabricImage,
   FabricObject,
   Group,
   Line,
@@ -14,7 +15,7 @@ import {
   Textbox,
   Triangle,
 } from 'fabric';
-import { drawingStyleMap } from '../drawingStyles';
+import { drawingStyleMap, getDrawingStyleLabel } from '../drawingStyles';
 import { generateSketchDraft } from '../services/aiSketch';
 import { traceDraftToPathCommands } from '../services/traceDraft';
 import type { DrawingCommand, ShapeKind } from '../types';
@@ -32,6 +33,7 @@ const persistedObjectProps = [
   'lockScalingY',
   'hasControls',
   'visible',
+  'aiPrompt',
 ];
 type SemanticObject = FabricObject & {
   semanticShape?: ShapeKind;
@@ -166,6 +168,66 @@ function getObjectBounds(object: FabricObject) {
 
 function getObjectId(object: FabricObject) {
   return String(object.get('id') ?? '');
+}
+
+function resolveRequestedPoint(
+  command: { x?: number; y?: number },
+  fallback: { x: number; y: number },
+) {
+  return {
+    x: command.x ?? fallback.x,
+    y: command.y ?? fallback.y,
+  };
+}
+
+const colorPromptLabels: Record<string, string> = {
+  '#cf5f45': '红色',
+  '#ff3b30': '红色',
+  '#316dca': '蓝色',
+  '#0a84ff': '蓝色',
+  '#3f8f5f': '绿色',
+  '#34c759': '绿色',
+  '#e3b341': '黄色',
+  '#ffcc00': '黄色',
+  '#8b5a2b': '棕色',
+  '#172018': '黑色',
+  '#111111': '黑色',
+};
+
+function buildStyledAiPrompt(
+  prompt: string,
+  style: keyof typeof drawingStyleMap,
+  color: string,
+  strokeWidth: number,
+) {
+  const styleLabel = getDrawingStyleLabel(style);
+  const normalizedColor = color.toLowerCase();
+  const colorLabel = colorPromptLabels[normalizedColor] ?? '当前颜色';
+  const isMonochrome = colorLabel === '黑色';
+  const lineWeight = strokeWidth <= 2 ? '细线条' : strokeWidth >= 6 ? '粗线条' : '中等线条';
+  const styleInstruction = style === 'default'
+    ? (isMonochrome ? '干净专业的黑白线稿草图' : '干净专业的彩色草图')
+    : (isMonochrome ? `${styleLabel}风格黑白线稿草图` : `${styleLabel}风格彩色草图`);
+  const colorInstruction = isMonochrome
+    ? '黑白线稿为主，少量灰度阴影'
+    : `主体以${colorLabel}为主色，主色覆盖主体大部分区域，填色面积约60%到80%，不要只作为少量点缀或细线`;
+  const animalInstruction = /松鼠|猫|狗|兔|狐狸|仓鼠|熊猫|熊|老虎|狮子|动物|小动物/.test(prompt)
+    ? (isMonochrome ? '动物保持黑白线稿皮毛' : `动物皮毛大面积使用${colorLabel}填色，尾巴和身体都要有明显${colorLabel}`)
+    : '';
+  const renderInstruction = isMonochrome
+    ? '保留白色纸面和清晰轮廓'
+    : '保留清晰轮廓，同时使用柔和水彩或马克笔式大面积铺色';
+  return [
+    prompt,
+    styleInstruction,
+    colorInstruction,
+    animalInstruction,
+    renderInstruction,
+    lineWeight,
+    '白色背景',
+    '主体清晰',
+    '适合放在绘图画布中',
+  ].filter(Boolean).join('，');
 }
 
 function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {
@@ -743,6 +805,121 @@ function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
   );
 }
 
+async function createDraftImageObject(imageDataUrl: string, centerX: number, centerY: number, maxSize = 430, prompt?: string) {
+  const image = await FabricImage.fromURL(imageDataUrl, { crossOrigin: 'anonymous' });
+  const width = image.width ?? maxSize;
+  const height = image.height ?? maxSize;
+  const scale = Math.min(maxSize / width, maxSize / height, 1);
+  image.set({
+    left: centerX,
+    top: centerY,
+    originX: 'center',
+    originY: 'center',
+    scaleX: scale,
+    scaleY: scale,
+    selectable: true,
+  });
+  if (prompt) {
+    image.set('aiPrompt', prompt);
+  }
+  return withObjectId(image);
+}
+
+function mergeBounds(bounds: ReturnType<typeof getObjectBounds>[]) {
+  const left = Math.min(...bounds.map((bound) => bound.left));
+  const top = Math.min(...bounds.map((bound) => bound.top));
+  const right = Math.max(...bounds.map((bound) => bound.right));
+  const bottom = Math.max(...bounds.map((bound) => bound.bottom));
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function createIncrementalStrokePaths(
+  edit: Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'],
+  bounds: ReturnType<typeof getObjectBounds>,
+  prompt = '',
+) {
+  const ink = '#172018';
+  const softInk = '#4b5a4d';
+  const cx = bounds.left + bounds.width / 2;
+  const cy = bounds.top + bounds.height / 2;
+  const unit = Math.max(42, Math.min(120, Math.max(bounds.width, bounds.height) * 0.28));
+  const p = (path: string, stroke = ink, strokeWidth = 4) => createSketchPath(path, stroke, strokeWidth);
+
+  if (edit === 'tail') {
+    const baseX = bounds.right - unit * 0.16;
+    const baseY = cy + unit * 0.18;
+    const tipX = bounds.right + unit * 1.55;
+    const tipY = cy - unit * 0.62;
+    return [
+      p(`M ${baseX} ${baseY} C ${bounds.right + unit * 0.6} ${cy + unit * 0.9}, ${tipX + unit * 0.28} ${cy + unit * 0.22}, ${tipX} ${tipY}`, ink, 5),
+      p(`M ${baseX + unit * 0.12} ${baseY - unit * 0.16} C ${bounds.right + unit * 0.76} ${cy + unit * 0.3}, ${tipX + unit * 0.02} ${cy - unit * 1.1}, ${bounds.right + unit * 0.54} ${cy - unit * 0.78}`, ink, 5),
+      p(`M ${bounds.right + unit * 0.3} ${cy + unit * 0.34} C ${bounds.right + unit * 0.75} ${cy + unit * 0.06}, ${bounds.right + unit * 0.96} ${cy - unit * 0.3}, ${bounds.right + unit * 1.18} ${cy - unit * 0.52}`, softInk, 3),
+    ];
+  }
+
+  if (edit === 'ears') {
+    const y = bounds.top + unit * 0.05;
+    return [
+      p(`M ${cx - unit * 0.62} ${y + unit * 0.34} L ${cx - unit * 0.38} ${y - unit * 0.48} L ${cx - unit * 0.1} ${y + unit * 0.26}`, ink, 5),
+      p(`M ${cx + unit * 0.1} ${y + unit * 0.26} L ${cx + unit * 0.38} ${y - unit * 0.48} L ${cx + unit * 0.62} ${y + unit * 0.34}`, ink, 5),
+      p(`M ${cx - unit * 0.42} ${y + unit * 0.14} L ${cx - unit * 0.34} ${y - unit * 0.16} L ${cx - unit * 0.2} ${y + unit * 0.1}`, softInk, 2.8),
+      p(`M ${cx + unit * 0.2} ${y + unit * 0.1} L ${cx + unit * 0.34} ${y - unit * 0.16} L ${cx + unit * 0.42} ${y + unit * 0.14}`, softInk, 2.8),
+    ];
+  }
+
+  if (edit === 'hat') {
+    const animalHeadPrompt = /松鼠|猫|狗|兔|狐狸|仓鼠|熊猫|熊|老虎|狮子|动物|小动物/.test(prompt);
+    const hatCx = animalHeadPrompt ? bounds.left + bounds.width * 0.34 : cx;
+    const hatUnit = animalHeadPrompt
+      ? Math.max(44, Math.min(98, Math.min(bounds.width, bounds.height) * 0.22))
+      : unit;
+    const y = animalHeadPrompt ? bounds.top + bounds.height * 0.13 : bounds.top - hatUnit * 0.12;
+    return [
+      p(`M ${hatCx - hatUnit * 0.9} ${y + hatUnit * 0.42} C ${hatCx - hatUnit * 0.36} ${y + hatUnit * 0.24}, ${hatCx + hatUnit * 0.36} ${y + hatUnit * 0.24}, ${hatCx + hatUnit * 0.9} ${y + hatUnit * 0.42}`, ink, 5),
+      p(`M ${hatCx - hatUnit * 0.46} ${y + hatUnit * 0.32} L ${hatCx - hatUnit * 0.34} ${y - hatUnit * 0.34} C ${hatCx - hatUnit * 0.08} ${y - hatUnit * 0.52}, ${hatCx + hatUnit * 0.28} ${y - hatUnit * 0.48}, ${hatCx + hatUnit * 0.42} ${y + hatUnit * 0.32}`, ink, 5),
+      p(`M ${hatCx - hatUnit * 0.38} ${y + hatUnit * 0.1} C ${hatCx - hatUnit * 0.02} ${y + hatUnit * 0.22}, ${hatCx + hatUnit * 0.22} ${y + hatUnit * 0.18}, ${hatCx + hatUnit * 0.38} ${y + hatUnit * 0.08}`, softInk, 3),
+    ];
+  }
+
+  if (edit === 'bigger_eyes') {
+    const y = cy - unit * 0.22;
+    return [
+      p(`M ${cx - unit * 0.58} ${y} C ${cx - unit * 0.46} ${y - unit * 0.18}, ${cx - unit * 0.18} ${y - unit * 0.18}, ${cx - unit * 0.08} ${y} C ${cx - unit * 0.2} ${y + unit * 0.2}, ${cx - unit * 0.46} ${y + unit * 0.2}, ${cx - unit * 0.58} ${y}`, ink, 4.2),
+      p(`M ${cx + unit * 0.08} ${y} C ${cx + unit * 0.2} ${y - unit * 0.18}, ${cx + unit * 0.46} ${y - unit * 0.18}, ${cx + unit * 0.58} ${y} C ${cx + unit * 0.46} ${y + unit * 0.2}, ${cx + unit * 0.2} ${y + unit * 0.2}, ${cx + unit * 0.08} ${y}`, ink, 4.2),
+      p(`M ${cx - unit * 0.42} ${y - unit * 0.06} C ${cx - unit * 0.36} ${y + unit * 0.06}, ${cx - unit * 0.3} ${y + unit * 0.1}, ${cx - unit * 0.24} ${y + unit * 0.02}`, softInk, 2.6),
+      p(`M ${cx + unit * 0.24} ${y + unit * 0.02} C ${cx + unit * 0.3} ${y + unit * 0.1}, ${cx + unit * 0.36} ${y + unit * 0.06}, ${cx + unit * 0.42} ${y - unit * 0.06}`, softInk, 2.6),
+    ];
+  }
+
+  if (edit === 'whiskers') {
+    const y = cy + unit * 0.1;
+    return [
+      p(`M ${cx - unit * 0.12} ${y - unit * 0.08} C ${cx - unit * 0.62} ${y - unit * 0.2}, ${cx - unit * 0.9} ${y - unit * 0.18}, ${cx - unit * 1.14} ${y - unit * 0.32}`, ink, 3),
+      p(`M ${cx - unit * 0.12} ${y + unit * 0.06} C ${cx - unit * 0.62} ${y + unit * 0.02}, ${cx - unit * 0.92} ${y + unit * 0.16}, ${cx - unit * 1.18} ${y + unit * 0.2}`, ink, 3),
+      p(`M ${cx + unit * 0.12} ${y - unit * 0.08} C ${cx + unit * 0.62} ${y - unit * 0.2}, ${cx + unit * 0.9} ${y - unit * 0.18}, ${cx + unit * 1.14} ${y - unit * 0.32}`, ink, 3),
+      p(`M ${cx + unit * 0.12} ${y + unit * 0.06} C ${cx + unit * 0.62} ${y + unit * 0.02}, ${cx + unit * 0.92} ${y + unit * 0.16}, ${cx + unit * 1.18} ${y + unit * 0.2}`, ink, 3),
+    ];
+  }
+
+  return [];
+}
+
+const incrementalEditPrompts: Record<Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'], string> = {
+  tail: '在当前画面主体基础上添加自然连接的大尾巴，保持黑白线稿和原构图',
+  ears: '在当前画面主体头部添加合适的耳朵，保持黑白线稿和原构图',
+  hat: '在当前画面主体头上戴一顶帽子，帽子要贴合头部，保持黑白线稿和原构图',
+  bigger_eyes: '在当前画面主体基础上把眼睛画得更大更可爱，保持黑白线稿和原构图',
+  thicker_lines: '把当前画面的线条加粗，保持原构图',
+  whiskers: '在当前画面主体脸部添加自然的胡须，保持黑白线稿和原构图',
+};
+
 async function traceDraftToBrushPaths(imageDataUrl: string, centerX: number, centerY: number) {
   const paths = await traceDraftToPathCommands(imageDataUrl, centerX, centerY);
   return paths.map((item) => createSketchPath(item.path, '#172018', item.strokeWidth));
@@ -894,6 +1071,7 @@ export function useFabricCanvas() {
   const storeOpacity = useDrawingStore((state) => state.currentOpacity);
   const storeStrokeColor = useDrawingStore((state) => state.currentStrokeColor);
   const storeStrokeWidth = useDrawingStore((state) => state.currentStrokeWidth);
+  const storeDrawingStyle = useDrawingStore((state) => state.currentDrawingStyle);
   const snapEnabled = useDrawingStore((state) => state.snapEnabled);
   const showGrid = useDrawingStore((state) => state.showGrid);
 
@@ -1274,6 +1452,37 @@ export function useFabricCanvas() {
         return '已移动选中对象';
       }
 
+      if (command.intent === 'place_selected_on_target') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中要移动的对象';
+        }
+        const selectedIds = new Set(activeObjects.map(getObjectId).filter(Boolean));
+        const targetObjects = canvas.getObjects()
+          .filter((object) => object.visible !== false && !selectedIds.has(getObjectId(object)));
+        if (targetObjects.length === 0) {
+          return '没有找到可对齐的目标对象';
+        }
+        const selectedBounds = mergeBounds(activeObjects.map(getObjectBounds));
+        const targetBounds = mergeBounds(targetObjects.map(getObjectBounds));
+        const targetHeadY = command.position === 'head'
+          ? targetBounds.top + Math.max(8, targetBounds.height * 0.08)
+          : targetBounds.top;
+        const dx = (targetBounds.left + targetBounds.width / 2) - (selectedBounds.left + selectedBounds.width / 2);
+        const dy = targetHeadY - selectedBounds.bottom + Math.max(4, selectedBounds.height * 0.08);
+        activeObjects.forEach((object) => {
+          object.set({
+            left: (object.left ?? 0) + dx,
+            top: (object.top ?? 0) + dy,
+          });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已把选中对象移动到${command.position === 'head' ? '目标头上' : '目标顶部'}`;
+      }
+
       if (command.intent === 'scale_selected') {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length === 0) {
@@ -1556,23 +1765,89 @@ export function useFabricCanvas() {
         return '已平移画布';
       }
 
+      if (command.intent === 'place_ai_draft_image') {
+        const center = resolveRequestedPoint(command, { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 });
+        const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
+        const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(styledPrompt)).imageDataUrl;
+        const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y, 430, command.prompt);
+        canvas.add(imageObject);
+        canvas.discardActiveObject();
+        canvas.setActiveObject(imageObject);
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
+        pushHistory();
+        return '已把 AI 草稿图片放到画布';
+      }
+
       if (command.intent === 'ai_brush_draw') {
-        const center = canvas.getActiveObject()
-          ? getObjectCenter(canvas.getActiveObject()!)
-          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
-        const draft = await generateSketchDraft(command.prompt);
-        const objects = await traceDraftToBrushPaths(draft.imageDataUrl, center.x, center.y);
+        const center = resolveRequestedPoint(command, { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 });
+        const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
+        const draft = await generateSketchDraft(styledPrompt);
+        const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
+        canvas.add(imageObject);
+        canvas.discardActiveObject();
+        canvas.setActiveObject(imageObject);
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
+        pushHistory();
+        const source = draft.provider === 'fallback' ? '本地测试草稿' : 'AI 草稿';
+        return `已把${source}图片放到画布`;
+      }
+
+      if (command.intent === 'incremental_edit') {
+        const activeObjects = canvas.getActiveObjects();
+        const previousObjects = canvas.getObjects()
+          .filter((object) => lastTouchedIdsRef.current.includes(getObjectId(object)));
+        const targets = activeObjects.length > 0 ? activeObjects : previousObjects;
+        if (command.edit === 'thicker_lines') {
+          const editableTargets = targets.length > 0 ? targets : canvas.getObjects();
+          if (editableTargets.length === 0) {
+            return '还没有可加粗的笔触';
+          }
+          editableTargets.forEach((object) => {
+            const currentWidth = Number(object.strokeWidth ?? 2);
+            object.set({ strokeWidth: Math.min(16, currentWidth + 2) });
+            object.setCoords();
+          });
+          canvas.requestRenderAll();
+          lastTouchedIdsRef.current = editableTargets.map(getObjectId).filter(Boolean);
+          pushHistory();
+          return `已基于当前画板加粗 ${editableTargets.length} 条笔触`;
+        }
+
+        const referenceObjects = targets.length > 0 ? targets : canvas.getObjects();
+        const referenceBounds = referenceObjects.length > 0
+          ? mergeBounds(referenceObjects.map(getObjectBounds))
+          : {
+              left: canvas.getWidth() / 2 - 90,
+              top: canvas.getHeight() / 2 - 90,
+              right: canvas.getWidth() / 2 + 90,
+              bottom: canvas.getHeight() / 2 + 90,
+              width: 180,
+              height: 180,
+            };
+        const promptContext = referenceObjects
+          .map((object) => String(object.get('aiPrompt') ?? ''))
+          .filter(Boolean)
+          .join(' ');
+        const objects = createIncrementalStrokePaths(command.edit, referenceBounds, promptContext);
         if (objects.length === 0) {
-          return 'AI 草稿生成了，但没有提取到可复刻的笔触';
+          return '这个局部修改还没支持';
         }
         objects.forEach((object) => canvas.add(object));
         canvas.discardActiveObject();
-        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
-        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        lastTouchedIdsRef.current = [...referenceObjects, ...objects].map(getObjectId).filter(Boolean);
         pushHistory();
-        const source = draft.provider === 'fallback' ? '本地测试草稿' : 'AI 草稿';
-        return `已根据${source}复刻 ${objects.length} 条画笔笔触`;
+        const labels: Record<Exclude<typeof command.edit, 'thicker_lines'>, string> = {
+          tail: '尾巴',
+          ears: '耳朵',
+          hat: '帽子',
+          bigger_eyes: '大眼睛',
+          whiskers: '胡须',
+        };
+        return `已在原图上叠加${labels[command.edit]}，未改动原图细节`;
       }
 
       if (command.intent === 'draw_sequence') {
