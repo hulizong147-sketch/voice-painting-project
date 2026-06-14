@@ -149,14 +149,8 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     const prompt = findAiBrushPrompt(rawText);
     return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
   }
-  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身|头像|男生|男人|男孩|女生|女孩|少女|的人|一个人|人像|角色)/.test(rawText)) {
+  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(rawText)) {
     return { intent: 'ai_brush_draw', prompt: rawText.trim() };
-  }
-  if (/(画笔|手绘|线稿|草图|勾线|笔刷)/.test(rawText) && /(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
-    return { intent: 'draw_template', template: 'anime_sketch' };
-  }
-  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
-    return { intent: 'draw_template', template: 'anime_character' };
   }
   if (/(女人|女性|女生|女孩|女头像|女人的头|女性头像|女生头像|女孩的脸|女孩头像)/.test(rawText) && /(头|头像|脸|面部)/.test(rawText)) {
     return { intent: 'draw_template', template: 'woman_head' };

@@ -114,9 +114,7 @@ export type DrawingCommand =
         | 'flowchart'
         | 'sun'
         | 'house'
-        | 'woman_head'
-        | 'anime_character'
-        | 'anime_sketch';
+        | 'woman_head';
     }
   | { intent: 'undo'; steps?: number }
   | { intent: 'redo'; steps?: number }

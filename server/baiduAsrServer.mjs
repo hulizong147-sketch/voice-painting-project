@@ -90,7 +90,13 @@ async function getAccessToken() {
     client_secret: secretKey,
   });
   const response = await fetch(`${TOKEN_URL}?${params.toString()}`, { method: 'POST' });
-  const data = await response.json();
+  const raw = await response.text();
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { error: { message: raw } };
+  }
   if (!response.ok || !data.access_token) {
     throw new Error(data.error_description ?? data.error ?? 'Failed to fetch Baidu access token');
   }
@@ -246,8 +252,13 @@ function normalizeImageDataUrl(image) {
 
 async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat }) {
   const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
+  const generationUrl = normalizedBaseUrl.endsWith('/v1/images/generations')
+    ? normalizedBaseUrl
+    : normalizedBaseUrl.endsWith('/v1')
+      ? `${normalizedBaseUrl}/images/generations`
+      : `${normalizedBaseUrl}/v1/images/generations`;
   const response = await withTimeout(
-    fetch(`${normalizedBaseUrl}/v1/images/generations`, {
+    fetch(generationUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -271,7 +282,7 @@ async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, re
     'Image download timed out',
   );
   if (!response.ok || !imageDataUrl) {
-    throw new Error(data?.error?.message ?? `Image generation failed with HTTP ${response.status}`);
+    throw new Error(data?.error?.message ?? data?.error ?? `Image generation failed with HTTP ${response.status} at ${generationUrl}`);
   }
   return imageDataUrl;
 }
