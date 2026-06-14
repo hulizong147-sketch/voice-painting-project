@@ -105,7 +105,7 @@ export function App() {
       const parsed = parseCommands(text);
       for (const item of parsed) {
         if (item.command.intent === 'ai_brush_draw') {
-          setFeedback(`正在生成 AI 草稿并复刻画笔：${item.command.prompt}`);
+          setFeedback(`正在生成 AI 草稿并放到画布：${item.command.prompt}`);
         }
         if (item.command.intent === 'place_ai_draft_image') {
           setFeedback(`正在把 AI 草稿放到画布：${item.command.prompt}`);

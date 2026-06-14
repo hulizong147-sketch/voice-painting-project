@@ -1714,18 +1714,15 @@ export function useFabricCanvas() {
           ? getObjectCenter(canvas.getActiveObject()!)
           : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
         const draft = await generateSketchDraft(command.prompt);
-        const objects = await traceDraftToBrushPaths(draft.imageDataUrl, center.x, center.y);
-        if (objects.length === 0) {
-          return 'AI 草稿生成了，但没有提取到可复刻的笔触';
-        }
-        objects.forEach((object) => canvas.add(object));
+        const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y);
+        canvas.add(imageObject);
         canvas.discardActiveObject();
-        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        canvas.setActiveObject(imageObject);
         canvas.requestRenderAll();
-        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        lastTouchedIdsRef.current = [getObjectId(imageObject)].filter(Boolean);
         pushHistory();
         const source = draft.provider === 'fallback' ? '本地测试草稿' : 'AI 草稿';
-        return `已根据${source}复刻 ${objects.length} 条画笔笔触`;
+        return `已把${source}图片放到画布`;
       }
 
       if (command.intent === 'incremental_edit') {
