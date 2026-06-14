@@ -287,6 +287,7 @@ export function App() {
                 <span>画一个女人的头</span>
                 <span>画一个二次元人物</span>
                 <span>用画笔画一个二次元人物</span>
+                <span>AI画笔画一个长发二次元少女头像</span>
                 <span>切换成水墨画风</span>
                 <span>以后用简笔画风</span>
               </div>

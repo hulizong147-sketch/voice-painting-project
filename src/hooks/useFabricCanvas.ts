@@ -15,6 +15,7 @@ import {
   Triangle,
 } from 'fabric';
 import { drawingStyleMap } from '../drawingStyles';
+import { generateSketchDraft } from '../services/aiSketch';
 import type { DrawingCommand, ShapeKind } from '../types';
 import { useDrawingStore } from '../store/drawingStore';
 
@@ -739,6 +740,80 @@ function createSketchPath(path: string, stroke = '#172018', strokeWidth = 5) {
     }),
     'line',
   );
+}
+
+function loadImage(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('AI 草稿图片加载失败'));
+    image.src = dataUrl;
+  });
+}
+
+async function traceDraftToBrushPaths(imageDataUrl: string, centerX: number, centerY: number) {
+  const image = await loadImage(imageDataUrl);
+  const sampleSize = 300;
+  const sourceCanvas = document.createElement('canvas');
+  sourceCanvas.width = sampleSize;
+  sourceCanvas.height = sampleSize;
+  const context = sourceCanvas.getContext('2d');
+  if (!context) {
+    throw new Error('浏览器不支持草稿追踪');
+  }
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, sampleSize, sampleSize);
+  const scale = Math.min(sampleSize / image.width, sampleSize / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const offsetX = (sampleSize - width) / 2;
+  const offsetY = (sampleSize - height) / 2;
+  context.drawImage(image, offsetX, offsetY, width, height);
+
+  const pixels = context.getImageData(0, 0, sampleSize, sampleSize).data;
+  const outputScale = 1.35;
+  const toCanvasX = (x: number) => centerX + (x - sampleSize / 2) * outputScale;
+  const toCanvasY = (y: number) => centerY + (y - sampleSize / 2) * outputScale;
+  const objects: Path[] = [];
+  const rowStep = 4;
+  const minRun = 5;
+  const maxStrokes = 360;
+
+  for (let y = 0; y < sampleSize; y += rowStep) {
+    let runStart = -1;
+    for (let x = 0; x <= sampleSize; x += 1) {
+      const index = (y * sampleSize + x) * 4;
+      const alpha = pixels[index + 3] ?? 0;
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      const luma = red * 0.299 + green * 0.587 + blue * 0.114;
+      const dark = alpha > 40 && luma < 188;
+      if (dark && runStart === -1) {
+        runStart = x;
+      }
+      if ((!dark || x === sampleSize) && runStart !== -1) {
+        const runEnd = x - 1;
+        if (runEnd - runStart >= minRun) {
+          const jitter = Math.sin(y * 0.19 + runStart * 0.07) * 1.4;
+          const path = [
+            `M ${toCanvasX(runStart).toFixed(1)} ${toCanvasY(y + jitter).toFixed(1)}`,
+            `C ${toCanvasX(runStart + (runEnd - runStart) * 0.32).toFixed(1)} ${toCanvasY(y - 1 + jitter).toFixed(1)},`,
+            `${toCanvasX(runStart + (runEnd - runStart) * 0.68).toFixed(1)} ${toCanvasY(y + 1 + jitter).toFixed(1)},`,
+            `${toCanvasX(runEnd).toFixed(1)} ${toCanvasY(y + jitter).toFixed(1)}`,
+          ].join(' ');
+          objects.push(createSketchPath(path, '#172018', 2 + ((runEnd - runStart) % 3) * 0.35));
+        }
+        runStart = -1;
+      }
+    }
+    if (objects.length >= maxStrokes) {
+      break;
+    }
+  }
+
+  return objects;
 }
 
 function createAnimeSketch(centerX: number, centerY: number) {
@@ -1547,6 +1622,25 @@ export function useFabricCanvas() {
         }
         canvas.requestRenderAll();
         return '已平移画布';
+      }
+
+      if (command.intent === 'ai_brush_draw') {
+        const center = canvas.getActiveObject()
+          ? getObjectCenter(canvas.getActiveObject()!)
+          : { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+        const draft = await generateSketchDraft(command.prompt);
+        const objects = await traceDraftToBrushPaths(draft.imageDataUrl, center.x, center.y);
+        if (objects.length === 0) {
+          return 'AI 草稿生成了，但没有提取到可复刻的笔触';
+        }
+        objects.forEach((object) => canvas.add(object));
+        canvas.discardActiveObject();
+        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        const source = draft.provider === 'openai' ? 'AI 草稿' : '本地草稿';
+        return `已根据${source}复刻 ${objects.length} 条画笔笔触`;
       }
 
       if (command.intent === 'draw_sequence') {
