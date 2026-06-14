@@ -102,8 +102,16 @@ export function App() {
       }
       const parsed = parseCommands(text);
       for (const item of parsed) {
-        const result = await execute(item.command);
-        handleCommand(item.command, item.text, result);
+        if (item.command.intent === 'ai_brush_draw') {
+          setFeedback(`正在生成 AI 草稿并复刻画笔：${item.command.prompt}`);
+        }
+        try {
+          const result = await execute(item.command);
+          handleCommand(item.command, item.text, result);
+        } catch (error) {
+          const result = error instanceof Error ? error.message : '命令执行失败';
+          handleCommand({ intent: 'unknown', reason: result }, item.text, result);
+        }
       }
     },
     [handleCommand, setFeedback],
