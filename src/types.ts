@@ -102,7 +102,7 @@ export type DrawingCommand =
   | { intent: 'fit_canvas' }
   | { intent: 'set_canvas_size'; width: number; height: number }
   | { intent: 'pan_canvas'; dx: number; dy: number }
-  | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' }
+  | { intent: 'draw_template'; template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' | 'woman_head' }
   | { intent: 'undo'; steps?: number }
   | { intent: 'redo'; steps?: number }
   | { intent: 'new_canvas' }
