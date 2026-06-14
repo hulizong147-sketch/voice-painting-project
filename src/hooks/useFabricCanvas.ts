@@ -823,6 +823,15 @@ function createIncrementalStrokePaths(
   return [];
 }
 
+const incrementalEditPrompts: Record<Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'], string> = {
+  tail: '在当前画面主体基础上添加自然连接的大尾巴，保持黑白线稿和原构图',
+  ears: '在当前画面主体头部添加合适的耳朵，保持黑白线稿和原构图',
+  hat: '在当前画面主体头上戴一顶帽子，帽子要贴合头部，保持黑白线稿和原构图',
+  bigger_eyes: '在当前画面主体基础上把眼睛画得更大更可爱，保持黑白线稿和原构图',
+  thicker_lines: '把当前画面的线条加粗，保持原构图',
+  whiskers: '在当前画面主体脸部添加自然的胡须，保持黑白线稿和原构图',
+};
+
 async function traceDraftToBrushPaths(imageDataUrl: string, centerX: number, centerY: number) {
   const paths = await traceDraftToPathCommands(imageDataUrl, centerX, centerY);
   return paths.map((item) => createSketchPath(item.path, '#172018', item.strokeWidth));
@@ -1707,26 +1716,28 @@ export function useFabricCanvas() {
           return `已基于当前画板加粗 ${editableTargets.length} 条笔触`;
         }
 
-        const referenceObjects = targets.length > 0 ? targets : canvas.getObjects();
-        const referenceBounds = referenceObjects.length > 0
-          ? mergeBounds(referenceObjects.map(getObjectBounds))
-          : {
-              left: canvas.getWidth() / 2 - 90,
-              top: canvas.getHeight() / 2 - 90,
-              right: canvas.getWidth() / 2 + 90,
-              bottom: canvas.getHeight() / 2 + 90,
-              width: 180,
-              height: 180,
-            };
-        const objects = createIncrementalStrokePaths(command.edit, referenceBounds);
-        if (objects.length === 0) {
-          return '这个局部修改还没支持';
+        const canvasObjects = canvas.getObjects();
+        if (canvasObjects.length === 0) {
+          return '画布上还没有可参考的内容';
         }
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        const referenceImageDataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
+        const draft = await generateSketchDraft(incrementalEditPrompts[command.edit], referenceImageDataUrl);
+        const objects = await traceDraftToBrushPaths(
+          draft.imageDataUrl,
+          canvas.getWidth() / 2,
+          canvas.getHeight() / 2,
+        );
+        if (objects.length === 0) {
+          return 'AI 已生成修改图，但没有提取到可复刻的笔触';
+        }
+        canvasObjects.forEach((object) => canvas.remove(object));
         objects.forEach((object) => canvas.add(object));
         canvas.discardActiveObject();
-        canvas.setActiveObject(objects.length === 1 ? objects[0] : new ActiveSelection(objects, { canvas }));
+        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
         canvas.requestRenderAll();
-        lastTouchedIdsRef.current = [...targets, ...objects].map(getObjectId).filter(Boolean);
+        lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
         const labels: Record<Exclude<typeof command.edit, 'thicker_lines'>, string> = {
           tail: '尾巴',
@@ -1735,7 +1746,7 @@ export function useFabricCanvas() {
           bigger_eyes: '大眼睛',
           whiskers: '胡须',
         };
-        return `已基于当前画板添加${labels[command.edit]}`;
+        return `已基于当前画板重绘并添加${labels[command.edit]}`;
       }
 
       if (command.intent === 'draw_sequence') {
