@@ -180,38 +180,6 @@ function resolveRequestedPoint(
   };
 }
 
-function findOpenCanvasPoint(canvas: Canvas) {
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
-  const objects = canvas.getObjects();
-  const candidates = [
-    { x: width * 0.28, y: height * 0.32 },
-    { x: width * 0.72, y: height * 0.32 },
-    { x: width * 0.28, y: height * 0.68 },
-    { x: width * 0.72, y: height * 0.68 },
-    { x: width * 0.5, y: height * 0.5 },
-  ];
-
-  if (objects.length === 0) {
-    return candidates[4];
-  }
-
-  const scorePoint = (point: { x: number; y: number }) => objects.reduce((score, object) => {
-    const center = getObjectCenter(object);
-    const distance = Math.hypot(point.x - center.x, point.y - center.y);
-    const bounds = getObjectBounds(object);
-    const overlapPenalty = point.x >= bounds.left - 160 &&
-      point.x <= bounds.right + 160 &&
-      point.y >= bounds.top - 160 &&
-      point.y <= bounds.bottom + 160
-      ? 1000
-      : 0;
-    return score + Math.min(distance, 900) - overlapPenalty;
-  }, 0);
-
-  return [...candidates].sort((a, b) => scorePoint(b) - scorePoint(a))[0];
-}
-
 const colorPromptLabels: Record<string, string> = {
   '#cf5f45': '红色',
   '#ff3b30': '红色',
@@ -1798,7 +1766,7 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'place_ai_draft_image') {
-        const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
+        const center = resolveRequestedPoint(command, { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 });
         const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
         const imageDataUrl = command.imageDataUrl ?? (await generateSketchDraft(styledPrompt)).imageDataUrl;
         const imageObject = await createDraftImageObject(imageDataUrl, center.x, center.y, 430, command.prompt);
@@ -1812,7 +1780,7 @@ export function useFabricCanvas() {
       }
 
       if (command.intent === 'ai_brush_draw') {
-        const center = resolveRequestedPoint(command, findOpenCanvasPoint(canvas));
+        const center = resolveRequestedPoint(command, { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 });
         const styledPrompt = buildStyledAiPrompt(command.prompt, storeDrawingStyle, storeColor, storeStrokeWidth);
         const draft = await generateSketchDraft(styledPrompt);
         const imageObject = await createDraftImageObject(draft.imageDataUrl, center.x, center.y, 430, command.prompt);
