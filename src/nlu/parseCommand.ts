@@ -47,6 +47,14 @@ function findDrawingStyle(text: string) {
   return drawingStyles.find(([, pattern]) => pattern.test(text))?.[0];
 }
 
+function normalizeRecognizedText(rawText: string) {
+  return rawText
+    .replace(/\s+/g, '')
+    .replace(/^(深沉|声称|生成成|生存|生产|先成|形成|身成|神成)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '生成$2')
+    .replace(/^(帮我)?(花|话)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '画$3')
+    .replace(/^回执/, '绘制');
+}
+
 function findAiBrushPrompt(rawText: string) {
   return rawText
     .replace(/\s+/g, '')
@@ -60,6 +68,14 @@ function findAiBrushPrompt(rawText: string) {
 function isGeneralDrawingRequest(text: string) {
   return /(画|绘制|生成|帮我画|给我画|请画|来个|做个)/.test(text)
     && !/(撤销|重做|删除|选中|选择|复制|粘贴|组合|取消组合|锁定|解锁|隐藏|显示|导出|保存|打开|新建|清空|放大|缩小|移动|旋转|翻转|对齐|分布|颜色|换成|改成|设为|画风|风格|样式|背景|透明|画笔粗细|字号|文字内容)/.test(text);
+}
+
+function isLikelyDrawableSubject(text: string) {
+  return text.length >= 2
+    && text.length <= 12
+    && !findShape(text)
+    && !findColor(text)
+    && !/(撤销|重做|删除|选中|选择|复制|粘贴|导出|保存|打开|清空|帮助|颜色|画风|风格)/.test(text);
 }
 
 function findIncrementalEdit(text: string): Extract<DrawingCommand, { intent: 'incremental_edit' }>['edit'] | undefined {
@@ -171,7 +187,8 @@ function findUpdatedTextContent(rawText: string) {
 }
 
 export function parseSingleCommand(rawText: string): DrawingCommand {
-  const text = rawText.replace(/\s+/g, '').trim();
+  const normalizedRawText = normalizeRecognizedText(rawText);
+  const text = normalizedRawText.replace(/\s+/g, '').trim();
   const requestedDrawingStyle = findDrawingStyle(text);
   if (requestedDrawingStyle && /画风|风格|样式|以后|接下来|切换|换成|改成|设为|设置|用/.test(text)) {
     return { intent: 'set_drawing_style', style: requestedDrawingStyle };
@@ -180,12 +197,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (incrementalEdit) {
     return { intent: 'incremental_edit', edit: incrementalEdit };
   }
-  if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(rawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
-    const prompt = findAiBrushPrompt(rawText);
-    return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
+  if (/(AI|ai|人工智能|生成草稿|草稿图|参考图|画笔复刻|笔刷复刻|临摹|描摹)/.test(normalizedRawText) && /(画|生成|复刻|临摹|描摹)/.test(text)) {
+    const prompt = findAiBrushPrompt(normalizedRawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim() };
   }
-  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(rawText)) {
-    return { intent: 'ai_brush_draw', prompt: rawText.trim() };
+  if (/(二次元|动漫|动画|anime|卡通)/i.test(normalizedRawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(normalizedRawText)) {
+    return { intent: 'ai_brush_draw', prompt: normalizedRawText.trim() };
   }
   if (!text) {
     return { intent: 'unknown', reason: '没有识别到命令' };
@@ -544,8 +561,12 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
 
   if (isGeneralDrawingRequest(text)) {
-    const prompt = findAiBrushPrompt(rawText);
-    return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
+    const prompt = findAiBrushPrompt(normalizedRawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || normalizedRawText.trim() };
+  }
+
+  if (isLikelyDrawableSubject(text)) {
+    return { intent: 'ai_brush_draw', prompt: text };
   }
 
   return { intent: 'unknown', reason: `还不能理解：“${rawText}”` };
