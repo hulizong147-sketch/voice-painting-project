@@ -54,6 +54,7 @@ export function App() {
   const freeDrawing = useDrawingStore((state) => state.freeDrawing);
   const isListening = useDrawingStore((state) => state.isListening);
   const listeningMode = useDrawingStore((state) => state.listeningMode);
+  const speechEngine = useDrawingStore((state) => state.speechEngine);
   const helpVisible = useDrawingStore((state) => state.helpVisible);
   const transcript = useDrawingStore((state) => state.transcript);
   const feedback = useDrawingStore((state) => state.feedback);
@@ -232,6 +233,7 @@ export function App() {
           <span>透明度 {Math.round(currentOpacity * 100)}%</span>
           <span>选中 {selectedCount}</span>
           <span>{freeDrawing ? '自由画笔' : '对象模式'}</span>
+          <span>{speechEngine === 'baidu' ? '百度 ASR' : speechEngine === 'browser' ? '浏览器语音' : '语音待机'}</span>
           <span>{showGrid ? '网格开' : '网格关'}</span>
           <span>{snapEnabled ? '吸附开' : '吸附关'}</span>
           <span>{Math.round(zoom * 100)}%</span>
@@ -249,7 +251,7 @@ export function App() {
           <div className={isListening ? 'listening-card active' : 'listening-card'}>
             <span className="listen-dot" />
             <div>
-              <h2>{isListening ? '正在监听' : '监听待机'}</h2>
+              <h2>{isListening ? (speechEngine === 'baidu' ? '百度语音监听' : '浏览器语音监听') : '监听待机'}</h2>
               <p>{transcript || feedback}</p>
             </div>
           </div>

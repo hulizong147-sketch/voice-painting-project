@@ -148,6 +148,7 @@ export interface DrawingContextState {
   freeDrawing: boolean;
   isListening: boolean;
   listeningMode: 'continuous' | 'push_to_talk';
+  speechEngine: 'baidu' | 'browser' | 'idle';
   helpVisible: boolean;
   transcript: string;
   feedback: string;

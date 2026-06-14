@@ -116,6 +116,7 @@ async function transcribeWithBaidu(body) {
 
   const token = await getAccessToken();
   const audioBuffer = Buffer.from(speech, 'base64');
+  console.log(`[baidu-asr] request bytes=${audioBuffer.length} rate=${Number(body.rate ?? 16000)}`);
   const payload = {
     speech,
     format: body.format ?? 'wav',
@@ -134,11 +135,14 @@ async function transcribeWithBaidu(body) {
   });
   const data = await response.json();
   if (!response.ok || data.err_no !== 0) {
+    console.error(`[baidu-asr] failed status=${response.status} err_no=${data.err_no} message=${data.err_msg ?? 'unknown'}`);
     throw new Error(data.err_msg ?? `Baidu ASR failed with err_no ${data.err_no}`);
   }
 
+  const text = Array.isArray(data.result) ? data.result.join('').trim() : '';
+  console.log(`[baidu-asr] result="${text}"`);
   return {
-    text: Array.isArray(data.result) ? data.result.join('').trim() : '',
+    text,
     raw: data,
   };
 }
