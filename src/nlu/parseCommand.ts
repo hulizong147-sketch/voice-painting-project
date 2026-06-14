@@ -121,6 +121,9 @@ function findUpdatedTextContent(rawText: string) {
 
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
+  if (/(画笔|手绘|线稿|草图|勾线|笔刷)/.test(rawText) && /(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
+    return { intent: 'draw_template', template: 'anime_sketch' };
+  }
   if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
     return { intent: 'draw_template', template: 'anime_character' };
   }

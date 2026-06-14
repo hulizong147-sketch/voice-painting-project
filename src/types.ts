@@ -104,7 +104,15 @@ export type DrawingCommand =
   | { intent: 'pan_canvas'; dx: number; dy: number }
   | {
       intent: 'draw_template';
-      template: 'smiley' | 'bar_chart' | 'flowchart' | 'sun' | 'house' | 'woman_head' | 'anime_character';
+      template:
+        | 'smiley'
+        | 'bar_chart'
+        | 'flowchart'
+        | 'sun'
+        | 'house'
+        | 'woman_head'
+        | 'anime_character'
+        | 'anime_sketch';
     }
   | { intent: 'undo'; steps?: number }
   | { intent: 'redo'; steps?: number }
