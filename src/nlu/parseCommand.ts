@@ -364,6 +364,9 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   if (/置底|放到最下面|放到最底下|移到最下面|移到最底下/.test(text)) {
     return { intent: 'send_to_back' };
   }
+  if (/(头上|脑袋上|头顶|顶部)/.test(text) && /(放|移动|移|挪|戴|放到|移动到|移到|挪到)/.test(text)) {
+    return { intent: 'place_selected_on_target', position: /头上|脑袋上|头顶/.test(text) ? 'head' : 'top' };
+  }
   if (/上移一层|放到上面/.test(text)) {
     return { intent: 'bring_forward' };
   }

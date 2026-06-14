@@ -1354,6 +1354,37 @@ export function useFabricCanvas() {
         return '已移动选中对象';
       }
 
+      if (command.intent === 'place_selected_on_target') {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length === 0) {
+          return '请先选中要移动的对象';
+        }
+        const selectedIds = new Set(activeObjects.map(getObjectId).filter(Boolean));
+        const targetObjects = canvas.getObjects()
+          .filter((object) => object.visible !== false && !selectedIds.has(getObjectId(object)));
+        if (targetObjects.length === 0) {
+          return '没有找到可对齐的目标对象';
+        }
+        const selectedBounds = mergeBounds(activeObjects.map(getObjectBounds));
+        const targetBounds = mergeBounds(targetObjects.map(getObjectBounds));
+        const targetHeadY = command.position === 'head'
+          ? targetBounds.top + Math.max(8, targetBounds.height * 0.08)
+          : targetBounds.top;
+        const dx = (targetBounds.left + targetBounds.width / 2) - (selectedBounds.left + selectedBounds.width / 2);
+        const dy = targetHeadY - selectedBounds.bottom + Math.max(4, selectedBounds.height * 0.08);
+        activeObjects.forEach((object) => {
+          object.set({
+            left: (object.left ?? 0) + dx,
+            top: (object.top ?? 0) + dy,
+          });
+          object.setCoords();
+        });
+        canvas.requestRenderAll();
+        lastTouchedIdsRef.current = activeObjects.map(getObjectId).filter(Boolean);
+        pushHistory();
+        return `已把选中对象移动到${command.position === 'head' ? '目标头上' : '目标顶部'}`;
+      }
+
       if (command.intent === 'scale_selected') {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length === 0) {

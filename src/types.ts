@@ -66,6 +66,7 @@ export type DrawingCommand =
   | { intent: 'set_visibility_selected'; visible: boolean }
   | { intent: 'show_all_objects' }
   | { intent: 'move_selected'; dx: number; dy: number }
+  | { intent: 'place_selected_on_target'; position: 'head' | 'top' }
   | { intent: 'scale_selected'; factor: number }
   | { intent: 'rotate_selected'; angle: number }
   | { intent: 'flip_selected'; axis: 'horizontal' | 'vertical' }
