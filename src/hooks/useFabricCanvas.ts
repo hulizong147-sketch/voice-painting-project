@@ -337,6 +337,185 @@ function createHouse(centerX: number, centerY: number) {
   return [roof, body, door, windowObject];
 }
 
+function createWomanHead(centerX: number, centerY: number) {
+  const skin = '#f2c6a8';
+  const skinStroke = '#9f6a4d';
+  const hair = '#2b1b18';
+  const line = '#172018';
+  const lip = '#b94b5c';
+
+  const backHair = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY - 12,
+      radius: 104,
+      fill: hair,
+      stroke: line,
+      strokeWidth: 3,
+      originX: 'center',
+      originY: 'center',
+      scaleX: 0.82,
+      scaleY: 1.12,
+    }),
+    'circle',
+  );
+  const neck = withSemanticShape(
+    new Rect({
+      left: centerX - 24,
+      top: centerY + 80,
+      width: 48,
+      height: 64,
+      fill: skin,
+      stroke: skinStroke,
+      strokeWidth: 3,
+      rx: 10,
+      ry: 10,
+    }),
+    'rect',
+  );
+  const shoulders = withSemanticShape(
+    new Line([centerX - 118, centerY + 150, centerX + 118, centerY + 150], {
+      stroke: '#166c5d',
+      strokeWidth: 18,
+      strokeLineCap: 'round',
+    }),
+    'line',
+  );
+  const leftEar = withSemanticShape(
+    new Circle({
+      left: centerX - 76,
+      top: centerY + 2,
+      radius: 18,
+      fill: skin,
+      stroke: skinStroke,
+      strokeWidth: 3,
+      originX: 'center',
+      originY: 'center',
+      scaleY: 1.28,
+    }),
+    'circle',
+  );
+  const rightEar = withSemanticShape(
+    new Circle({
+      left: centerX + 76,
+      top: centerY + 2,
+      radius: 18,
+      fill: skin,
+      stroke: skinStroke,
+      strokeWidth: 3,
+      originX: 'center',
+      originY: 'center',
+      scaleY: 1.28,
+    }),
+    'circle',
+  );
+  const face = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY,
+      radius: 78,
+      fill: skin,
+      stroke: line,
+      strokeWidth: 4,
+      originX: 'center',
+      originY: 'center',
+      scaleX: 0.88,
+      scaleY: 1.08,
+    }),
+    'circle',
+  );
+  const fringe = withSemanticShape(
+    new Polygon(
+      [
+        { x: 0, y: 42 },
+        { x: 42, y: 0 },
+        { x: 92, y: 30 },
+        { x: 136, y: 4 },
+        { x: 164, y: 48 },
+        { x: 120, y: 34 },
+        { x: 80, y: 58 },
+        { x: 36, y: 46 },
+      ],
+      {
+        left: centerX - 82,
+        top: centerY - 91,
+        fill: hair,
+        stroke: hair,
+        strokeWidth: 2,
+      },
+    ),
+    'triangle',
+  );
+  const leftHair = withSemanticShape(
+    new Circle({
+      left: centerX - 70,
+      top: centerY + 40,
+      radius: 42,
+      fill: hair,
+      strokeWidth: 0,
+      originX: 'center',
+      originY: 'center',
+      scaleY: 1.75,
+    }),
+    'circle',
+  );
+  const rightHair = withSemanticShape(
+    new Circle({
+      left: centerX + 70,
+      top: centerY + 40,
+      radius: 42,
+      fill: hair,
+      strokeWidth: 0,
+      originX: 'center',
+      originY: 'center',
+      scaleY: 1.75,
+    }),
+    'circle',
+  );
+  const leftEye = withSemanticShape(
+    new Circle({ left: centerX - 28, top: centerY - 16, radius: 7, fill: line, strokeWidth: 0, originX: 'center', originY: 'center' }),
+    'circle',
+  );
+  const rightEye = withSemanticShape(
+    new Circle({ left: centerX + 28, top: centerY - 16, radius: 7, fill: line, strokeWidth: 0, originX: 'center', originY: 'center' }),
+    'circle',
+  );
+  const leftBrow = withSemanticShape(
+    new Line([centerX - 44, centerY - 36, centerX - 16, centerY - 40], { stroke: line, strokeWidth: 4, strokeLineCap: 'round' }),
+    'line',
+  );
+  const rightBrow = withSemanticShape(
+    new Line([centerX + 16, centerY - 40, centerX + 44, centerY - 36], { stroke: line, strokeWidth: 4, strokeLineCap: 'round' }),
+    'line',
+  );
+  const nose = withSemanticShape(
+    new Line([centerX + 4, centerY - 4, centerX - 4, centerY + 24], { stroke: skinStroke, strokeWidth: 3, strokeLineCap: 'round' }),
+    'line',
+  );
+  const mouth = withSemanticShape(
+    new Line([centerX - 24, centerY + 48, centerX + 24, centerY + 48], { stroke: lip, strokeWidth: 6, strokeLineCap: 'round' }),
+    'line',
+  );
+
+  return [
+    backHair,
+    neck,
+    shoulders,
+    leftEar,
+    rightEar,
+    face,
+    leftHair,
+    rightHair,
+    fringe,
+    leftBrow,
+    rightBrow,
+    leftEye,
+    rightEye,
+    nose,
+    mouth,
+  ];
+}
+
 function createFlowchart(centerX: number, centerY: number) {
   const nodeStyle = {
     width: 150,
@@ -1225,6 +1404,7 @@ export function useFabricCanvas() {
           flowchart: { label: '流程图模板', objects: createFlowchart(center.x, center.y) },
           sun: { label: '太阳模板', objects: createSun(center.x, center.y) },
           house: { label: '房子模板', objects: createHouse(center.x, center.y) },
+          woman_head: { label: '女性头像模板', objects: createWomanHead(center.x, center.y) },
         };
         const template = templateMap[command.template];
         const objects = template.objects;

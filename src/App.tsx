@@ -281,6 +281,7 @@ export function App() {
                 <span>适应屏幕</span>
                 <span>画一个流程图</span>
                 <span>画一个房子</span>
+                <span>画一个女人的头</span>
               </div>
             ) : null}
           </section>
