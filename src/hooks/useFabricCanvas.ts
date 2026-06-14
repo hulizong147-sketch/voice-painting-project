@@ -235,21 +235,26 @@ function buildStyledAiPrompt(
   const styleLabel = getDrawingStyleLabel(style);
   const normalizedColor = color.toLowerCase();
   const colorLabel = colorPromptLabels[normalizedColor] ?? '当前颜色';
+  const isMonochrome = colorLabel === '黑色';
   const lineWeight = strokeWidth <= 2 ? '细线条' : strokeWidth >= 6 ? '粗线条' : '中等线条';
   const styleInstruction = style === 'default'
-    ? '干净专业的线稿草图'
-    : `${styleLabel}风格线稿草图`;
-  const colorInstruction = colorLabel === '黑色'
+    ? (isMonochrome ? '干净专业的黑白线稿草图' : '干净专业的彩色草图')
+    : (isMonochrome ? `${styleLabel}风格黑白线稿草图` : `${styleLabel}风格彩色草图`);
+  const colorInstruction = isMonochrome
     ? '黑白线稿为主，少量灰度阴影'
-    : `主体以${colorLabel}为主色，大面积使用${colorLabel}上色，不要只作为少量点缀`;
+    : `主体以${colorLabel}为主色，主色覆盖主体大部分区域，填色面积约60%到80%，不要只作为少量点缀或细线`;
   const animalInstruction = /松鼠|猫|狗|兔|狐狸|仓鼠|熊猫|熊|老虎|狮子|动物|小动物/.test(prompt)
-    ? `动物皮毛主要使用${colorLabel}`
+    ? (isMonochrome ? '动物保持黑白线稿皮毛' : `动物皮毛大面积使用${colorLabel}填色，尾巴和身体都要有明显${colorLabel}`)
     : '';
+  const renderInstruction = isMonochrome
+    ? '保留白色纸面和清晰轮廓'
+    : '保留清晰轮廓，同时使用柔和水彩或马克笔式大面积铺色';
   return [
     prompt,
     styleInstruction,
     colorInstruction,
     animalInstruction,
+    renderInstruction,
     lineWeight,
     '白色背景',
     '主体清晰',
