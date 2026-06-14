@@ -9,6 +9,12 @@ interface AiTracePreviewProps {
   executeCommand?: (command: DrawingCommand) => Promise<string>;
 }
 
+const draftProviderLabels: Record<SketchDraftResponse['provider'], string> = {
+  right_codes: 'Right Code AI',
+  openai: 'OpenAI',
+  fallback: '本地测试草稿',
+};
+
 export function AiTracePreview({ executeCommand, onCommand }: AiTracePreviewProps) {
   const [prompt, setPrompt] = useState('长发二次元少女头像线稿');
   const [draft, setDraft] = useState<SketchDraftResponse | null>(null);
@@ -49,7 +55,7 @@ export function AiTracePreview({ executeCommand, onCommand }: AiTracePreviewProp
       setMessage('草稿已生成，正在追踪轮廓...');
       const nextPaths = await traceDraftToPathCommands(nextDraft.imageDataUrl, 220, 220);
       setPaths(nextPaths);
-      setMessage(`已完成描改预览：${nextPaths.length} 条路径，来源 ${nextDraft.provider}`);
+      setMessage(`已完成描改预览：${nextPaths.length} 条路径，来源 ${draftProviderLabels[nextDraft.provider]}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'AI 描改预览失败');
     } finally {

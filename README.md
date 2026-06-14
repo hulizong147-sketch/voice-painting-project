@@ -41,11 +41,12 @@ RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_IMAGE_MODEL=gpt-image-1
 OPENAI_IMAGE_SIZE=1024x1024
+ENABLE_LOCAL_SKETCH_FALLBACK=false
 ```
 
 `BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
 
-`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, VoiceDraw uses a local fallback sketch so the brush-tracing pipeline can still be tested.
+`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, AI draft generation is disabled and the app shows a configuration error. Set `ENABLE_LOCAL_SKETCH_FALLBACK=true` only when you want to test the tracing pipeline with a local placeholder sketch.
 
 ## Implemented
 

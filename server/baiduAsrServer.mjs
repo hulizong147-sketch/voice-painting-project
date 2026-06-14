@@ -299,7 +299,11 @@ async function generateSketchDraft(body) {
 
   const rightCodesApiKey = process.env.RIGHT_CODES_DRAW_API_KEY ?? process.env.RIGHT_CODES_API_KEY;
   const openAiApiKey = process.env.OPENAI_API_KEY;
+  const enableLocalFallback = process.env.ENABLE_LOCAL_SKETCH_FALLBACK === 'true';
   if (!rightCodesApiKey && !openAiApiKey) {
+    if (!enableLocalFallback) {
+      throw new Error('未配置 AI 绘图 Key，请在 .env 填 RIGHT_CODES_DRAW_API_KEY 或 OPENAI_API_KEY 后重启服务');
+    }
     return {
       imageDataUrl: fallbackSketchDataUrl(prompt),
       provider: 'fallback',
