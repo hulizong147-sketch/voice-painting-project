@@ -245,11 +245,12 @@ h1 {
 
 .side-panel {
   display: grid;
-  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-rows: auto auto auto auto auto minmax(180px, 1fr);
   gap: 18px;
   min-height: 0;
   padding: 18px;
   border-left: 1px solid var(--line);
+  overflow: auto;
   background: var(--panel);
 }
 
@@ -341,6 +342,112 @@ h1 {
   font-weight: 800;
   background: var(--brand);
   cursor: pointer;
+}
+
+.ai-trace-preview {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-trace-header {
+  display: grid;
+  gap: 4px;
+}
+
+.ai-trace-header h2 {
+  margin: 0;
+}
+
+.ai-trace-header span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ai-trace-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.ai-trace-controls input {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 9px;
+  color: #172018;
+  background: #fff;
+}
+
+.ai-trace-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid #c4ccbd;
+  border-radius: 8px;
+  color: #172018;
+  font-weight: 800;
+  background: #f8faf6;
+  cursor: pointer;
+}
+
+.ai-trace-controls button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.ai-trace-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ai-trace-panel {
+  display: grid;
+  grid-template-rows: auto 150px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fbfbf8;
+}
+
+.ai-trace-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+  background: #eef3ea;
+}
+
+.ai-trace-panel img,
+.ai-trace-panel svg {
+  width: 100%;
+  height: 150px;
+  background: #fff;
+}
+
+.ai-trace-panel img {
+  object-fit: contain;
+}
+
+.ai-trace-empty {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  background: #fff;
 }
 
 .side-panel h2 {

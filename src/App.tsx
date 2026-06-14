@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, RotateCw } from 'lucide-react';
+import { AiTracePreview } from './components/AiTracePreview';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { getDrawingStyleLabel } from './drawingStyles';
 import type { CommandHistoryItem, DrawingCommand } from './types';
@@ -300,6 +301,10 @@ export function App() {
               </div>
             ) : null}
           </section>
+          <AiTracePreview
+            executeCommand={executeRef.current}
+            onCommand={handleCommand}
+          />
           <form
             className="text-command"
             onSubmit={(event) => {
