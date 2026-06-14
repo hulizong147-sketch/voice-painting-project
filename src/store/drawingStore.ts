@@ -15,6 +15,7 @@ interface DrawingStore extends DrawingContextState {
   setFreeDrawing: (freeDrawing: boolean) => void;
   setListening: (isListening: boolean) => void;
   setListeningMode: (listeningMode: 'continuous' | 'push_to_talk') => void;
+  setSpeechEngine: (speechEngine: 'baidu' | 'browser' | 'idle') => void;
   setHelpVisible: (helpVisible: boolean) => void;
   setTranscript: (transcript: string) => void;
   setFeedback: (feedback: string) => void;
@@ -36,6 +37,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   freeDrawing: false,
   isListening: false,
   listeningMode: 'continuous',
+  speechEngine: 'idle',
   helpVisible: true,
   transcript: '',
   feedback: '准备就绪，说一句“画一个红色的圆”。',
@@ -61,6 +63,7 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
   setFreeDrawing: (freeDrawing) => set({ freeDrawing }),
   setListening: (isListening) => set({ isListening }),
   setListeningMode: (listeningMode) => set({ listeningMode }),
+  setSpeechEngine: (speechEngine) => set({ speechEngine }),
   setHelpVisible: (helpVisible) => set({ helpVisible }),
   setTranscript: (transcript) => set({ transcript }),
   setFeedback: (feedback) => set({ feedback }),
