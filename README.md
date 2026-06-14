@@ -1,57 +1,165 @@
 # VoiceDraw
 
-VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Web Speech API, SpeechSynthesis, and a local rule-based Chinese NLU parser.
+VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Baidu speech APIs, Web Speech API fallbacks, and a local rule-based Chinese NLU parser.
 
 ## Run
 
 ```bash
 npm install
+copy .env.example .env
 npm run dev -- --port 5173
 ```
 
 Open http://127.0.0.1:5173.
 
+On Windows, if terminal output shows garbled Chinese, switch the shell to UTF-8 before starting dev:
+
+```powershell
+chcp 65001
+$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+npm run dev
+```
+
+For Baidu speech recognition and voice feedback, create a Baidu Intelligent Cloud speech app, enable short speech recognition and online text-to-speech, then fill these values in `.env`:
+
+```bash
+BAIDU_ASR_API_KEY=your_api_key
+BAIDU_ASR_SECRET_KEY=your_secret_key
+BAIDU_ASR_CUID=voicedraw-web
+BAIDU_ASR_DEV_PID=1537
+BAIDU_TTS_CUID=voicedraw-web
+BAIDU_TTS_PER=0
+BAIDU_TTS_SPD=5
+BAIDU_TTS_PIT=5
+BAIDU_TTS_VOL=7
+BAIDU_TTS_AUE=3
+RIGHT_CODES_DRAW_API_KEY=your_right_codes_draw_key
+RIGHT_CODES_DRAW_BASE_URL=https://www.right.codes/draw
+RIGHT_CODES_DRAW_MODEL=gpt-image-2
+RIGHT_CODES_DRAW_SIZE=1024x1024
+RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_IMAGE_SIZE=1024x1024
+ENABLE_LOCAL_SKETCH_FALLBACK=false
+```
+
+`BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
+
+`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, AI draft generation is disabled and the app shows a configuration error. Set `ENABLE_LOCAL_SKETCH_FALLBACK=true` only when you want to test the tracing pipeline with a local placeholder sketch.
+
 ## Implemented
 
-- Fabric.js vector canvas with circle, rectangle, triangle, line, and star creation.
+- Fabric.js vector canvas with circle, rectangle, triangle, line, star, and text creation.
+- Text object editing and basic text styling for selected text boxes.
 - Chinese text and voice command parsing for basic drawing commands.
-- Continuous Web Speech API listening with zh-CN recognition.
-- SpeechSynthesis feedback after command execution.
+- Sequence drawing for simple repeated layouts such as rows and columns.
+- Baidu speech recognition through a local backend, with browser Web Speech fallback.
+- Baidu text-to-speech feedback after command execution, with SpeechSynthesis fallback.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
-- Current drawing context for color, stroke width, selected count, grid state, and free drawing mode.
-- Undo and redo based on canvas snapshots.
-- Object operations: select all, delete selected, move, scale, rotate, bring forward, send backward.
+- Current drawing context for fill color, stroke color, stroke width, opacity, drawing style, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color, stroke width, and drawing style.
+- Single-step and multi-step undo/redo based on canvas snapshots.
+- Object operations: select all, delete selected, delete by description, group, ungroup, lock, unlock, hide, show, copy, paste, duplicate, move, scale, rotate, flip, align, distribute, style, bring forward, send backward, bring to front, send to back, with toolbar shortcuts for common selection, grouping, and locking actions.
 - Natural language object selection by color, shape, and simple positional words.
 - Relative drawing near the current selection.
-- Built-in smiley and bar chart templates.
-- Free drawing mode using Fabric PencilBrush.
-- Grid visibility toggle and status display.
+- Built-in smiley and bar chart templates with toolbar shortcuts.
+- Additional templates for flowcharts, suns, and houses.
+- Free drawing mode using Fabric PencilBrush with voice and toolbar toggles.
+- AI draft brush replica: generate a sketch draft, trace the dark lines, and replay them as Fabric Path brush strokes.
+- Grid visibility toggle from voice commands, toolbar controls, and status display.
 - PNG export.
 - SVG export.
-- Canvas JSON save and restore.
+- Canvas JSON save and restore from voice commands and toolbar buttons.
+- New canvas command that resets the workspace and history.
 - Batch color updates by simple object filters.
+- Correction commands that revise the most recently touched objects.
+- Canvas view controls for zoom, reset-to-fit, pan, and grid snapping.
+- Canvas background color command.
+- Canvas size commands for exact dimensions and common presets.
+- Listening mode switch between continuous recognition and push-to-talk.
+- In-app command help panel with voice/text commands for showing or hiding help.
+- Command history items can be copied, replayed, filtered, imported, exported, or cleared from the side panel.
 - Manual text command fallback for browsers without speech recognition.
 
 ## Example Commands
 
 - 画一个红色的圆
+- 画 5 个红色圆排成一排
+- 画三个蓝色矩形排成一列
+- 添加标题 VoiceDraw
+- 写文字 “草图说明”
+- 把文字改成 “最终标题”
+- 字号 48
+- 加粗文字
 - 画一个蓝色三角形，然后画一个黄色星星
 - 换成绿色
+- 描边改成蓝色
+- 画布背景改成灰色
 - 画笔粗细 8
+- 透明度 50%
+- 半透明
+- 切换成二次元画风
+- 以后用水墨画风
+- 设置为简笔画风
 - 向右移动一点
 - 放大两倍
 - 旋转 45 度
+- 水平翻转
+- 垂直翻转
+- 复制选中
+- 粘贴
+- 复制一份
+- 组合
+- 取消组合
+- 锁定选中
+- 解锁
+- 隐藏选中
+- 显示全部对象
+- 选中隐藏对象
+- 选中可见对象
+- 反选
+- 取消选择
+- 左对齐
+- 水平居中
+- 横向均匀分布
+- 排成一列
+- 置顶
+- 置底
 - 选中红色的圆
 - 选中最左边的圆
 - 画一个笑脸
 - 画一个柱状图
+- 画一个流程图
+- 画一个太阳
+- 画一个房子
+- 画一个女人的头
+- 画一个二次元的人
+- 画一个二次元猫耳女孩头像
+- AI画笔画一个长发二次元少女头像
 - 把所有红色圆改成蓝色
 - 导出 SVG
 - 保存 JSON 工程
 - 打开 JSON 工程
+- 新建画布
+- 不对，改成深蓝色
+- 等一下，放大一点
+- 不是，旋转 30 度
+- 放大画布
+- 缩小画布
+- 适应屏幕
+- 画布改成 1280x720
+- 横版画布
+- 开启吸附
+- 画布向右移动
+- 切换到按住说话，然后按住空格发出命令
+- 帮助
+- 隐藏帮助
 - 删除选中
+- 删除所有红色圆
 - 撤销
+- 撤销 3 步
 - 重做
+- 重做 2 步
 - 开始画
 - 停笔
 - 隐藏网格
@@ -70,5 +178,4 @@ Open http://127.0.0.1:5173.
 - Offline Whisper pipeline.
 - LLM-based generative drawing.
 - Advanced spatial relation understanding.
-- Templates such as smiley faces and charts.
 - Accessibility audit automation and latency benchmarking.
