@@ -24,6 +24,10 @@ export const colorMap: Record<string, string> = {
   白: '#ffffff',
   灰色: '#8e8e93',
   灰: '#8e8e93',
+  棕色: '#8b5a2b',
+  棕: '#8b5a2b',
+  褐色: '#8b5a2b',
+  褐: '#8b5a2b',
 };
 
 export function findColor(text: string) {

@@ -21,6 +21,7 @@ const toolbarColors = [
   { label: '蓝色', value: '#316dca' },
   { label: '绿色', value: '#3f8f5f' },
   { label: '黄色', value: '#e3b341' },
+  { label: '棕色', value: '#8b5a2b' },
   { label: '黑色', value: '#172018' },
 ];
 

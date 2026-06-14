@@ -213,11 +213,17 @@ function findOpenCanvasPoint(canvas: Canvas) {
 }
 
 const colorPromptLabels: Record<string, string> = {
-  '#cf5f45': '红色点缀',
-  '#316dca': '蓝色点缀',
-  '#3f8f5f': '绿色点缀',
-  '#e3b341': '黄色点缀',
-  '#172018': '黑白线稿',
+  '#cf5f45': '红色',
+  '#ff3b30': '红色',
+  '#316dca': '蓝色',
+  '#0a84ff': '蓝色',
+  '#3f8f5f': '绿色',
+  '#34c759': '绿色',
+  '#e3b341': '黄色',
+  '#ffcc00': '黄色',
+  '#8b5a2b': '棕色',
+  '#172018': '黑色',
+  '#111111': '黑色',
 };
 
 function buildStyledAiPrompt(
@@ -227,12 +233,28 @@ function buildStyledAiPrompt(
   strokeWidth: number,
 ) {
   const styleLabel = getDrawingStyleLabel(style);
-  const colorLabel = colorPromptLabels[color.toLowerCase()] ?? '当前颜色点缀';
+  const normalizedColor = color.toLowerCase();
+  const colorLabel = colorPromptLabels[normalizedColor] ?? '当前颜色';
   const lineWeight = strokeWidth <= 2 ? '细线条' : strokeWidth >= 6 ? '粗线条' : '中等线条';
   const styleInstruction = style === 'default'
     ? '干净专业的线稿草图'
     : `${styleLabel}风格线稿草图`;
-  return `${prompt}，${styleInstruction}，${colorLabel}，${lineWeight}，白色背景，主体清晰，适合放在绘图画布中`;
+  const colorInstruction = colorLabel === '黑色'
+    ? '黑白线稿为主，少量灰度阴影'
+    : `主体以${colorLabel}为主色，大面积使用${colorLabel}上色，不要只作为少量点缀`;
+  const animalInstruction = /松鼠|猫|狗|兔|狐狸|仓鼠|熊猫|熊|老虎|狮子|动物|小动物/.test(prompt)
+    ? `动物皮毛主要使用${colorLabel}`
+    : '';
+  return [
+    prompt,
+    styleInstruction,
+    colorInstruction,
+    animalInstruction,
+    lineWeight,
+    '白色背景',
+    '主体清晰',
+    '适合放在绘图画布中',
+  ].filter(Boolean).join('，');
 }
 
 function pickByPosition(objects: SemanticObject[], position?: 'leftmost' | 'rightmost' | 'topmost' | 'bottommost') {

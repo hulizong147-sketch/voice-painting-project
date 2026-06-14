@@ -556,7 +556,7 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     };
   }
 
-  if (color && /换成|改成|设为|颜色|用/.test(text)) {
+  if (color && /换成|改成|改为|修改为|变成|变为|设为|设置为|颜色|用/.test(text)) {
     return { intent: 'set_color', color };
   }
 
