@@ -52,8 +52,14 @@ function findAiBrushPrompt(rawText: string) {
     .replace(/\s+/g, '')
     .replace(/^(请|帮我|给我)?(用)?(AI|ai|人工智能)?(生成)?(一张)?(草稿|参考图)?(再)?(用)?(画笔|笔刷)?(复刻|描摹|临摹|画)/, '')
     .replace(/^(AI|ai)?(画笔|笔刷)(画|生成|复刻)/, '')
-    .replace(/^(生成|画)(一个|一张|一幅)?/, '')
+    .replace(/^(帮我|请|给我)?(画|绘制|生成|做|来)(一个|一只|一条|一张|一幅|个|只|条|张|幅)?/, '')
+    .replace(/^(一个|一只|一条|一张|一幅|个|只|条|张|幅)/, '')
     .trim();
+}
+
+function isGeneralDrawingRequest(text: string) {
+  return /(画|绘制|生成|帮我画|给我画|请画|来个|做个)/.test(text)
+    && !/(撤销|重做|删除|选中|选择|复制|粘贴|组合|取消组合|锁定|解锁|隐藏|显示|导出|保存|打开|新建|清空|放大|缩小|移动|旋转|翻转|对齐|分布|颜色|换成|改成|设为|画风|风格|样式|背景|透明|画笔粗细|字号|文字内容)/.test(text);
 }
 
 function findSize(text: string) {
@@ -151,9 +157,6 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
   }
   if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人|人物|角色|人像|头像|男生|男人|男孩|女生|女孩|少女|长发|短发|卷发|双马尾|猫耳|兽耳|拿着|穿着|坐着|站着|全身|半身)/.test(rawText)) {
     return { intent: 'ai_brush_draw', prompt: rawText.trim() };
-  }
-  if (/(女人|女性|女生|女孩|女头像|女人的头|女性头像|女生头像|女孩的脸|女孩头像)/.test(rawText) && /(头|头像|脸|面部)/.test(rawText)) {
-    return { intent: 'draw_template', template: 'woman_head' };
   }
   if (!text) {
     return { intent: 'unknown', reason: '没有识别到命令' };
@@ -506,6 +509,11 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
 
   if (color && /换成|改成|设为|颜色|用/.test(text)) {
     return { intent: 'set_color', color };
+  }
+
+  if (isGeneralDrawingRequest(text)) {
+    const prompt = findAiBrushPrompt(rawText);
+    return { intent: 'ai_brush_draw', prompt: prompt || rawText.trim() };
   }
 
   return { intent: 'unknown', reason: `还不能理解：“${rawText}”` };
