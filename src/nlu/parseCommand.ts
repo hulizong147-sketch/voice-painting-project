@@ -121,6 +121,9 @@ function findUpdatedTextContent(rawText: string) {
 
 export function parseSingleCommand(rawText: string): DrawingCommand {
   const text = rawText.replace(/\s+/g, '').trim();
+  if (/(二次元|动漫|动画|anime|卡通)/i.test(rawText) && /(人物|角色|人像|头像|女孩|少女)/.test(rawText)) {
+    return { intent: 'draw_template', template: 'anime_character' };
+  }
   if (/(女人|女性|女生|女孩|女头像|女人的头|女性头像|女生头像|女孩的脸|女孩头像)/.test(rawText) && /(头|头像|脸|面部)/.test(rawText)) {
     return { intent: 'draw_template', template: 'woman_head' };
   }

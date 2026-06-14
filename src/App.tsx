@@ -282,6 +282,7 @@ export function App() {
                 <span>画一个流程图</span>
                 <span>画一个房子</span>
                 <span>画一个女人的头</span>
+                <span>画一个二次元人物</span>
               </div>
             ) : null}
           </section>
