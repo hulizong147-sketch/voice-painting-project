@@ -516,6 +516,216 @@ function createWomanHead(centerX: number, centerY: number) {
   ];
 }
 
+function createAnimeCharacter(centerX: number, centerY: number) {
+  const skin = '#ffd7bd';
+  const line = '#172018';
+  const hair = '#7c4dff';
+  const hairShadow = '#5030b7';
+  const eye = '#20a4f3';
+  const blush = '#ff8fa3';
+  const uniform = '#1f6f8b';
+  const accent = '#ff4d6d';
+
+  const body = withSemanticShape(
+    new Polygon(
+      [
+        { x: 0, y: 130 },
+        { x: 70, y: 0 },
+        { x: 140, y: 130 },
+      ],
+      {
+        left: centerX - 70,
+        top: centerY + 88,
+        fill: uniform,
+        stroke: line,
+        strokeWidth: 4,
+      },
+    ),
+    'triangle',
+  );
+  const collarLeft = withSemanticShape(
+    new Polygon(
+      [
+        { x: 0, y: 0 },
+        { x: 52, y: 18 },
+        { x: 22, y: 58 },
+      ],
+      { left: centerX - 58, top: centerY + 102, fill: '#ffffff', stroke: line, strokeWidth: 3 },
+    ),
+    'triangle',
+  );
+  const collarRight = withSemanticShape(
+    new Polygon(
+      [
+        { x: 52, y: 0 },
+        { x: 0, y: 18 },
+        { x: 30, y: 58 },
+      ],
+      { left: centerX + 6, top: centerY + 102, fill: '#ffffff', stroke: line, strokeWidth: 3 },
+    ),
+    'triangle',
+  );
+  const bowLeft = withSemanticShape(
+    new Triangle({
+      left: centerX - 20,
+      top: centerY + 142,
+      width: 44,
+      height: 36,
+      fill: accent,
+      stroke: line,
+      strokeWidth: 3,
+      angle: -90,
+      originX: 'center',
+      originY: 'center',
+    }),
+    'triangle',
+  );
+  const bowRight = withSemanticShape(
+    new Triangle({
+      left: centerX + 20,
+      top: centerY + 142,
+      width: 44,
+      height: 36,
+      fill: accent,
+      stroke: line,
+      strokeWidth: 3,
+      angle: 90,
+      originX: 'center',
+      originY: 'center',
+    }),
+    'triangle',
+  );
+  const bowKnot = withSemanticShape(
+    new Circle({ left: centerX, top: centerY + 142, radius: 10, fill: accent, stroke: line, strokeWidth: 3, originX: 'center', originY: 'center' }),
+    'circle',
+  );
+  const neck = withSemanticShape(
+    new Rect({ left: centerX - 18, top: centerY + 72, width: 36, height: 48, rx: 10, ry: 10, fill: skin, stroke: line, strokeWidth: 3 }),
+    'rect',
+  );
+  const backHair = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY - 12,
+      radius: 118,
+      fill: hairShadow,
+      stroke: line,
+      strokeWidth: 4,
+      originX: 'center',
+      originY: 'center',
+      scaleX: 0.72,
+      scaleY: 1.08,
+    }),
+    'circle',
+  );
+  const leftTwinTail = withSemanticShape(
+    new Polygon(
+      [
+        { x: 50, y: 0 },
+        { x: 100, y: 104 },
+        { x: 58, y: 196 },
+        { x: 14, y: 94 },
+      ],
+      { left: centerX - 136, top: centerY - 62, fill: hair, stroke: line, strokeWidth: 4 },
+    ),
+    'triangle',
+  );
+  const rightTwinTail = withSemanticShape(
+    new Polygon(
+      [
+        { x: 50, y: 0 },
+        { x: 88, y: 94 },
+        { x: 44, y: 196 },
+        { x: 2, y: 104 },
+      ],
+      { left: centerX + 44, top: centerY - 62, fill: hair, stroke: line, strokeWidth: 4 },
+    ),
+    'triangle',
+  );
+  const face = withSemanticShape(
+    new Circle({
+      left: centerX,
+      top: centerY,
+      radius: 82,
+      fill: skin,
+      stroke: line,
+      strokeWidth: 4,
+      originX: 'center',
+      originY: 'center',
+      scaleX: 0.86,
+      scaleY: 1.02,
+    }),
+    'circle',
+  );
+  const bangs = [-58, -24, 10, 42].map((offset, index) =>
+    withSemanticShape(
+      new Triangle({
+        left: centerX + offset,
+        top: centerY - 72 + (index % 2) * 8,
+        width: 46,
+        height: 82,
+        fill: hair,
+        stroke: line,
+        strokeWidth: 3,
+        angle: [-18, 8, -8, 18][index],
+        originX: 'center',
+        originY: 'center',
+      }),
+      'triangle',
+    ),
+  );
+  const leftEyeWhite = withSemanticShape(
+    new Circle({ left: centerX - 30, top: centerY - 10, radius: 22, fill: '#ffffff', stroke: line, strokeWidth: 3, originX: 'center', originY: 'center', scaleX: 0.78, scaleY: 1.18 }),
+    'circle',
+  );
+  const rightEyeWhite = withSemanticShape(
+    new Circle({ left: centerX + 30, top: centerY - 10, radius: 22, fill: '#ffffff', stroke: line, strokeWidth: 3, originX: 'center', originY: 'center', scaleX: 0.78, scaleY: 1.18 }),
+    'circle',
+  );
+  const leftIris = withSemanticShape(
+    new Circle({ left: centerX - 30, top: centerY - 8, radius: 13, fill: eye, stroke: '#0a5278', strokeWidth: 2, originX: 'center', originY: 'center', scaleY: 1.25 }),
+    'circle',
+  );
+  const rightIris = withSemanticShape(
+    new Circle({ left: centerX + 30, top: centerY - 8, radius: 13, fill: eye, stroke: '#0a5278', strokeWidth: 2, originX: 'center', originY: 'center', scaleY: 1.25 }),
+    'circle',
+  );
+  const eyeHighlights = [
+    withSemanticShape(new Circle({ left: centerX - 35, top: centerY - 18, radius: 5, fill: '#ffffff', strokeWidth: 0, originX: 'center', originY: 'center' }), 'circle'),
+    withSemanticShape(new Circle({ left: centerX + 25, top: centerY - 18, radius: 5, fill: '#ffffff', strokeWidth: 0, originX: 'center', originY: 'center' }), 'circle'),
+  ];
+  const cheeks = [
+    withSemanticShape(new Circle({ left: centerX - 50, top: centerY + 34, radius: 12, fill: blush, opacity: 0.55, strokeWidth: 0, originX: 'center', originY: 'center', scaleX: 1.4 }), 'circle'),
+    withSemanticShape(new Circle({ left: centerX + 50, top: centerY + 34, radius: 12, fill: blush, opacity: 0.55, strokeWidth: 0, originX: 'center', originY: 'center', scaleX: 1.4 }), 'circle'),
+  ];
+  const mouth = withSemanticShape(
+    new Line([centerX - 12, centerY + 48, centerX + 12, centerY + 48], { stroke: '#b94b5c', strokeWidth: 5, strokeLineCap: 'round' }),
+    'line',
+  );
+
+  return [
+    body,
+    collarLeft,
+    collarRight,
+    bowLeft,
+    bowRight,
+    bowKnot,
+    neck,
+    backHair,
+    leftTwinTail,
+    rightTwinTail,
+    face,
+    ...bangs,
+    leftEyeWhite,
+    rightEyeWhite,
+    leftIris,
+    rightIris,
+    ...eyeHighlights,
+    ...cheeks,
+    mouth,
+  ];
+}
+
 function createFlowchart(centerX: number, centerY: number) {
   const nodeStyle = {
     width: 150,
@@ -1405,6 +1615,7 @@ export function useFabricCanvas() {
           sun: { label: '太阳模板', objects: createSun(center.x, center.y) },
           house: { label: '房子模板', objects: createHouse(center.x, center.y) },
           woman_head: { label: '女性头像模板', objects: createWomanHead(center.x, center.y) },
+          anime_character: { label: '二次元人物模板', objects: createAnimeCharacter(center.x, center.y) },
         };
         const template = templateMap[command.template];
         const objects = template.objects;
