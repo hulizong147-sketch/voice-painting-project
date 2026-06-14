@@ -1,6 +1,6 @@
 export interface SketchDraftResponse {
   imageDataUrl: string;
-  provider: 'openai' | 'fallback';
+  provider: 'right_codes' | 'openai' | 'fallback';
   model?: string;
   prompt: string;
 }

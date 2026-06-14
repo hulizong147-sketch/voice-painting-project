@@ -25,6 +25,11 @@ BAIDU_TTS_SPD=5
 BAIDU_TTS_PIT=5
 BAIDU_TTS_VOL=7
 BAIDU_TTS_AUE=3
+RIGHT_CODES_DRAW_API_KEY=your_right_codes_draw_key
+RIGHT_CODES_DRAW_BASE_URL=https://www.right.codes/draw
+RIGHT_CODES_DRAW_MODEL=gpt-image-2
+RIGHT_CODES_DRAW_SIZE=1024x1024
+RIGHT_CODES_DRAW_RESPONSE_FORMAT=url
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_IMAGE_MODEL=gpt-image-1
 OPENAI_IMAGE_SIZE=1024x1024
@@ -32,7 +37,7 @@ OPENAI_IMAGE_SIZE=1024x1024
 
 `BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
 
-`OPENAI_API_KEY` enables the AI draft brush replica workflow. Without it, VoiceDraw uses a local fallback sketch so the brush-tracing pipeline can still be tested.
+`RIGHT_CODES_DRAW_API_KEY` enables the AI draft brush replica workflow through Right Code's draw API. `OPENAI_API_KEY` is still supported as a fallback provider. Without either key, VoiceDraw uses a local fallback sketch so the brush-tracing pipeline can still be tested.
 
 ## Implemented
 

@@ -31,6 +31,7 @@ const TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token';
 const ASR_URL = 'https://vop.baidu.com/server_api';
 const TTS_URL = 'https://tsn.baidu.com/text2audio';
 const OPENAI_IMAGES_URL = 'https://api.openai.com/v1/images/generations';
+const RIGHT_CODES_DRAW_BASE_URL = 'https://www.right.codes/draw';
 const TOKEN_REFRESH_WINDOW_MS = 60 * 60 * 1000;
 
 let cachedToken = null;
@@ -211,14 +212,59 @@ function fallbackSketchDataUrl(prompt) {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
+async function imageUrlToDataUrl(url) {
+  const imageResponse = await fetch(url);
+  if (!imageResponse.ok) {
+    throw new Error(`Failed to download generated image with HTTP ${imageResponse.status}`);
+  }
+  const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
+  const payload = Buffer.from(await imageResponse.arrayBuffer());
+  return `data:${contentType};base64,${payload.toString('base64')}`;
+}
+
+function normalizeImageDataUrl(image) {
+  if (image?.b64_json) {
+    return `data:image/png;base64,${image.b64_json}`;
+  }
+  if (image?.url) {
+    return imageUrlToDataUrl(image.url);
+  }
+  return null;
+}
+
+async function requestImageGeneration({ apiKey, baseUrl, model, prompt, size, responseFormat }) {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
+  const response = await fetch(`${normalizedBaseUrl}/v1/images/generations`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      size,
+      ...(responseFormat ? { response_format: responseFormat } : {}),
+    }),
+  });
+  const data = await response.json();
+  const image = data?.data?.[0];
+  const imageDataUrl = await normalizeImageDataUrl(image);
+  if (!response.ok || !imageDataUrl) {
+    throw new Error(data?.error?.message ?? `Image generation failed with HTTP ${response.status}`);
+  }
+  return imageDataUrl;
+}
+
 async function generateSketchDraft(body) {
   const prompt = String(body.prompt ?? '').trim();
   if (!prompt) {
     throw new Error('Missing sketch prompt');
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const rightCodesApiKey = process.env.RIGHT_CODES_DRAW_API_KEY ?? process.env.RIGHT_CODES_API_KEY;
+  const openAiApiKey = process.env.OPENAI_API_KEY;
+  if (!rightCodesApiKey && !openAiApiKey) {
     return {
       imageDataUrl: fallbackSketchDataUrl(prompt),
       provider: 'fallback',
@@ -232,26 +278,35 @@ async function generateSketchDraft(body) {
     'Use confident readable outlines, minimal shading, no text, no watermark.',
     `Subject: ${prompt}`,
   ].join(' ');
-  const openaiResponse = await fetch(OPENAI_IMAGES_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
+
+  if (rightCodesApiKey) {
+    const rightCodesModel = process.env.RIGHT_CODES_DRAW_MODEL ?? process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-2';
+    const imageDataUrl = await requestImageGeneration({
+      apiKey: rightCodesApiKey,
+      baseUrl: process.env.RIGHT_CODES_DRAW_BASE_URL ?? RIGHT_CODES_DRAW_BASE_URL,
+      model: rightCodesModel,
       prompt: imagePrompt,
-      size: process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
-    }),
-  });
-  const data = await openaiResponse.json();
-  const image = data?.data?.[0];
-  if (!openaiResponse.ok || !image?.b64_json) {
-    throw new Error(data?.error?.message ?? `OpenAI image generation failed with HTTP ${openaiResponse.status}`);
+      size: process.env.RIGHT_CODES_DRAW_SIZE ?? process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
+      responseFormat: process.env.RIGHT_CODES_DRAW_RESPONSE_FORMAT ?? 'url',
+    });
+    return {
+      imageDataUrl,
+      provider: 'right_codes',
+      model: rightCodesModel,
+      prompt,
+    };
   }
 
+  const imageDataUrl = await requestImageGeneration({
+    apiKey: openAiApiKey,
+    baseUrl: OPENAI_IMAGES_URL.replace(/\/v1\/images\/generations$/, ''),
+    model,
+    prompt: imagePrompt,
+    size: process.env.OPENAI_IMAGE_SIZE ?? '1024x1024',
+    responseFormat: 'b64_json',
+  });
   return {
-    imageDataUrl: `data:image/png;base64,${image.b64_json}`,
+    imageDataUrl,
     provider: 'openai',
     model,
     prompt,

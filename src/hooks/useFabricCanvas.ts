@@ -1639,7 +1639,7 @@ export function useFabricCanvas() {
         canvas.requestRenderAll();
         lastTouchedIdsRef.current = objects.map(getObjectId).filter(Boolean);
         pushHistory();
-        const source = draft.provider === 'openai' ? 'AI 草稿' : '本地草稿';
+        const source = draft.provider === 'fallback' ? '本地草稿' : 'AI 草稿';
         return `已根据${source}复刻 ${objects.length} 条画笔笔触`;
       }
 
