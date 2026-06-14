@@ -452,7 +452,7 @@ export function parseSingleCommand(rawText: string): DrawingCommand {
     };
   }
   const count = findCount(text);
-  if (shape && count && count > 1 && /排成一排|一排|横向排列|水平排列|排成一列|一列|纵向排列|垂直排列/.test(text)) {
+  if (shape && count && count > 1 && /画|绘制|放|来|生成|排成/.test(text)) {
     return {
       intent: 'draw_sequence',
       shape,
