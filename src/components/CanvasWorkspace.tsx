@@ -157,8 +157,8 @@ export function CanvasWorkspace({
         <button
           className="tool-button"
           type="button"
-          title="AI 草稿画笔复刻"
-          onClick={() => void runCommand({ intent: 'ai_brush_draw', prompt: '长发二次元少女头像线稿' }, 'AI画笔画一个长发二次元少女头像')}
+          title="AI 生成草稿"
+          onClick={() => void runCommand({ intent: 'ai_brush_draw', prompt: '长发二次元少女头像线稿' }, '画一个长发二次元少女头像')}
         >
           <Sparkles size={18} />
         </button>

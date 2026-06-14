@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, RotateCw } from 'lucide-react';
-import { AiTracePreview } from './components/AiTracePreview';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { getDrawingStyleLabel } from './drawingStyles';
 import type { CommandHistoryItem, DrawingCommand } from './types';
@@ -111,7 +110,7 @@ export function App() {
           setFeedback(`正在把 AI 草稿放到画布：${item.command.prompt}`);
         }
         if (item.command.intent === 'incremental_edit' && item.command.edit !== 'thicker_lines') {
-          setFeedback('正在参考当前画板重新生成修改版...');
+          setFeedback('正在保留原图并添加局部图层...');
         }
         try {
           const result = await execute(item.command);
@@ -221,9 +220,10 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="top-bar">
-        <div>
+        <div className="brand-lockup">
           <p className="eyebrow">VoiceDraw</p>
           <h1>语音绘图工作台</h1>
+          <p className="brand-subtitle">纯语音控制 · AI 草稿 · 画布编辑闭环</p>
         </div>
         <div className="status-pills" aria-label="当前绘图状态">
           <span className="color-pill">
@@ -309,10 +309,6 @@ export function App() {
               </div>
             ) : null}
           </section>
-          <AiTracePreview
-            executeCommand={executeRef.current}
-            onCommand={handleCommand}
-          />
           <form
             className="text-command"
             onSubmit={(event) => {
@@ -360,7 +356,12 @@ export function App() {
               visibleCommands.map((item) => (
                 <article className="command-item" key={item.id}>
                   <div className="command-item-header">
-                    <time>{new Date(item.createdAt).toLocaleTimeString()}</time>
+                    <div className="command-item-meta">
+                      <time>{new Date(item.createdAt).toLocaleTimeString()}</time>
+                      <span className={item.ok ? 'command-status success' : 'command-status error'}>
+                        {item.ok ? '成功' : '失败'}
+                      </span>
+                    </div>
                     <div className="command-item-actions">
                       <button
                         aria-label={`复制命令：${item.text}`}
