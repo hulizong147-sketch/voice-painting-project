@@ -37,6 +37,11 @@ declare global {
 }
 
 const TARGET_SAMPLE_RATE = 16000;
+const VOICE_RMS_THRESHOLD = 0.012;
+const CONTINUOUS_SILENCE_MS = 900;
+const CONTINUOUS_MAX_RECORDING_MS = 7000;
+const CONTINUOUS_MIN_RECORDING_MS = 350;
+const PRE_ROLL_BUFFER_COUNT = 8;
 
 function mergeBuffers(buffers: Float32Array[]) {
   const length = buffers.reduce((sum, buffer) => sum + buffer.length, 0);
@@ -113,6 +118,14 @@ function blobToBase64(blob: Blob) {
   });
 }
 
+function calculateRms(samples: Float32Array) {
+  let sum = 0;
+  for (let index = 0; index < samples.length; index += 1) {
+    sum += samples[index] * samples[index];
+  }
+  return Math.sqrt(sum / samples.length);
+}
+
 export function useSpeechRecognition(onFinalText: (text: string) => void) {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const shouldListenRef = useRef(false);
@@ -121,8 +134,14 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioBuffersRef = useRef<Float32Array[]>([]);
+  const preRollBuffersRef = useRef<Float32Array[]>([]);
   const inputSampleRateRef = useRef(TARGET_SAMPLE_RATE);
   const baiduRecordingRef = useRef(false);
+  const continuousBaiduRef = useRef(false);
+  const speechActiveRef = useRef(false);
+  const baiduTranscribingRef = useRef(false);
+  const lastVoiceAtRef = useRef(0);
+  const recordingStartedAtRef = useRef(0);
   const setListening = useDrawingStore((state) => state.setListening);
   const setTranscript = useDrawingStore((state) => state.setTranscript);
   const setFeedback = useDrawingStore((state) => state.setFeedback);
@@ -194,6 +213,14 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
     }
   }, [onFinalText, setFeedback, setListening, setTranscript]);
 
+  const resetBaiduSegmentation = useCallback(() => {
+    audioBuffersRef.current = [];
+    preRollBuffersRef.current = [];
+    speechActiveRef.current = false;
+    lastVoiceAtRef.current = 0;
+    recordingStartedAtRef.current = 0;
+  }, []);
+
   const cleanupBaiduRecording = useCallback(() => {
     audioProcessorRef.current?.disconnect();
     audioSourceRef.current?.disconnect();
@@ -203,29 +230,23 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
     audioSourceRef.current = null;
     audioStreamRef.current = null;
     audioContextRef.current = null;
-  }, []);
-
-  const stopBaiduAsr = useCallback(async () => {
-    if (!baiduRecordingRef.current) {
-      stopBrowserSpeech();
-      return;
-    }
-
     baiduRecordingRef.current = false;
-    setListening(false);
-    setTranscript('');
-    cleanupBaiduRecording();
+    continuousBaiduRef.current = false;
+    resetBaiduSegmentation();
+  }, [resetBaiduSegmentation]);
 
-    const merged = mergeBuffers(audioBuffersRef.current);
-    audioBuffersRef.current = [];
-    if (merged.length < inputSampleRateRef.current * 0.2) {
-      setFeedback('录音太短，请按住后说完整命令。');
+  const transcribeBaiduAudio = useCallback(async (samples: Float32Array, showShortMessage: boolean) => {
+    if (samples.length < inputSampleRateRef.current * 0.2) {
+      if (showShortMessage) {
+        setFeedback('录音太短，请说完整命令。');
+      }
       return;
     }
 
     try {
+      baiduTranscribingRef.current = true;
       setFeedback('正在使用百度语音识别...');
-      const wav = encodeWav(downsample(merged, inputSampleRateRef.current));
+      const wav = encodeWav(downsample(samples, inputSampleRateRef.current));
       const speech = await blobToBase64(wav);
       const response = await fetch('/api/asr/baidu', {
         method: 'POST',
@@ -245,8 +266,46 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
       onFinalText(text);
     } catch (error) {
       setFeedback(error instanceof Error ? `百度语音识别失败：${error.message}` : '百度语音识别失败');
+    } finally {
+      baiduTranscribingRef.current = false;
     }
-  }, [cleanupBaiduRecording, onFinalText, setFeedback, setListening, setTranscript, stopBrowserSpeech]);
+  }, [onFinalText, setFeedback]);
+
+  const flushContinuousBaiduAudio = useCallback(() => {
+    if (baiduTranscribingRef.current || audioBuffersRef.current.length === 0) {
+      return;
+    }
+
+    const merged = mergeBuffers(audioBuffersRef.current);
+    resetBaiduSegmentation();
+    setTranscript('');
+    void transcribeBaiduAudio(merged, false);
+  }, [resetBaiduSegmentation, setTranscript, transcribeBaiduAudio]);
+
+  const stopBaiduAsr = useCallback(async () => {
+    if (!baiduRecordingRef.current) {
+      stopBrowserSpeech();
+      return;
+    }
+
+    const wasContinuous = continuousBaiduRef.current;
+    const hadSpeech = speechActiveRef.current || audioBuffersRef.current.length > 0;
+    const merged = mergeBuffers(audioBuffersRef.current);
+    setListening(false);
+    setTranscript('');
+    cleanupBaiduRecording();
+
+    if (wasContinuous) {
+      if (hadSpeech) {
+        await transcribeBaiduAudio(merged, false);
+      } else {
+        setFeedback('已停止持续监听。');
+      }
+      return;
+    }
+
+    await transcribeBaiduAudio(merged, true);
+  }, [cleanupBaiduRecording, setFeedback, setListening, setTranscript, stopBrowserSpeech, transcribeBaiduAudio]);
 
   const startBaiduAsr = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioContext === 'undefined') {
@@ -259,13 +318,52 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      audioBuffersRef.current = [];
+      const isContinuous = useDrawingStore.getState().listeningMode === 'continuous';
+      resetBaiduSegmentation();
       inputSampleRateRef.current = audioContext.sampleRate;
+      continuousBaiduRef.current = isContinuous;
       processor.onaudioprocess = (event) => {
         if (!baiduRecordingRef.current) {
           return;
         }
-        audioBuffersRef.current.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+
+        const chunk = new Float32Array(event.inputBuffer.getChannelData(0));
+        if (!continuousBaiduRef.current) {
+          audioBuffersRef.current.push(chunk);
+          return;
+        }
+
+        const rms = calculateRms(chunk);
+        const now = Date.now();
+        if (!speechActiveRef.current) {
+          preRollBuffersRef.current.push(chunk);
+          if (preRollBuffersRef.current.length > PRE_ROLL_BUFFER_COUNT) {
+            preRollBuffersRef.current.shift();
+          }
+
+          if (rms > VOICE_RMS_THRESHOLD && !baiduTranscribingRef.current) {
+            speechActiveRef.current = true;
+            recordingStartedAtRef.current = now;
+            lastVoiceAtRef.current = now;
+            audioBuffersRef.current = [...preRollBuffersRef.current];
+            setTranscript('正在听你说话...');
+          }
+          return;
+        }
+
+        audioBuffersRef.current.push(chunk);
+        if (rms > VOICE_RMS_THRESHOLD) {
+          lastVoiceAtRef.current = now;
+        }
+
+        const recordingDuration = now - recordingStartedAtRef.current;
+        const silenceDuration = now - lastVoiceAtRef.current;
+        if (
+          recordingDuration >= CONTINUOUS_MIN_RECORDING_MS &&
+          (silenceDuration >= CONTINUOUS_SILENCE_MS || recordingDuration >= CONTINUOUS_MAX_RECORDING_MS)
+        ) {
+          flushContinuousBaiduAudio();
+        }
       };
       source.connect(processor);
       processor.connect(audioContext.destination);
@@ -276,12 +374,12 @@ export function useSpeechRecognition(onFinalText: (text: string) => void) {
       baiduRecordingRef.current = true;
       setListening(true);
       setTranscript('');
-      setFeedback('正在录音，松开或再次点击后发送到百度识别。');
+      setFeedback(isContinuous ? '正在持续监听，说完后会自动识别。' : '正在录音，松开或再次点击后发送到百度识别。');
     } catch {
       setFeedback('麦克风启动失败，已尝试浏览器语音识别。');
       startBrowserSpeech();
     }
-  }, [setFeedback, setListening, setTranscript, startBrowserSpeech]);
+  }, [flushContinuousBaiduAudio, resetBaiduSegmentation, setFeedback, setListening, setTranscript, startBrowserSpeech]);
 
   const stop = useCallback(() => {
     void stopBaiduAsr();

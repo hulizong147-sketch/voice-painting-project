@@ -1,6 +1,6 @@
 # VoiceDraw
 
-VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Web Speech API, SpeechSynthesis, and a local rule-based Chinese NLU parser.
+VoiceDraw is a browser-based voice drawing workbench built from the project design document. It uses React, TypeScript, Vite, Fabric.js, Baidu speech APIs, Web Speech API fallbacks, and a local rule-based Chinese NLU parser.
 
 ## Run
 
@@ -12,14 +12,22 @@ npm run dev -- --port 5173
 
 Open http://127.0.0.1:5173.
 
-For Baidu speech recognition, create a Baidu Intelligent Cloud speech app and fill these values in `.env`:
+For Baidu speech recognition and voice feedback, create a Baidu Intelligent Cloud speech app, enable short speech recognition and online text-to-speech, then fill these values in `.env`:
 
 ```bash
 BAIDU_ASR_API_KEY=your_api_key
 BAIDU_ASR_SECRET_KEY=your_secret_key
 BAIDU_ASR_CUID=voicedraw-web
 BAIDU_ASR_DEV_PID=1537
+BAIDU_TTS_CUID=voicedraw-web
+BAIDU_TTS_PER=0
+BAIDU_TTS_SPD=5
+BAIDU_TTS_PIT=5
+BAIDU_TTS_VOL=7
+BAIDU_TTS_AUE=3
 ```
+
+`BAIDU_TTS_PER` controls the feedback voice. Try `0` first for the default female voice; adjust it in `.env` if your Baidu app has more voices enabled.
 
 ## Implemented
 
@@ -28,7 +36,7 @@ BAIDU_ASR_DEV_PID=1537
 - Chinese text and voice command parsing for basic drawing commands.
 - Sequence drawing for simple repeated layouts such as rows and columns.
 - Baidu speech recognition through a local backend, with browser Web Speech fallback.
-- SpeechSynthesis feedback after command execution.
+- Baidu text-to-speech feedback after command execution, with SpeechSynthesis fallback.
 - Command decomposition for multi-step instructions such as "画一个蓝色三角形，然后画一个红色的圆".
 - Current drawing context for fill color, stroke color, stroke width, opacity, selected count, grid state, and free drawing mode, with toolbar shortcuts for fill color and stroke width.
 - Single-step and multi-step undo/redo based on canvas snapshots.

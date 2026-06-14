@@ -5,6 +5,7 @@ import type { CommandHistoryItem, DrawingCommand } from './types';
 import { useDrawingStore } from './store/drawingStore';
 import { parseCommands } from './nlu/parseCommand';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
+import { speakFeedback } from './services/speechFeedback';
 
 const normalizeImportedCommands = (value: unknown): CommandHistoryItem[] => {
   if (!Array.isArray(value)) {
@@ -87,10 +88,7 @@ export function App() {
       ok: !_command.intent.includes('unknown'),
     });
     setFeedback(result);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(new SpeechSynthesisUtterance(result));
-    }
+    void speakFeedback(result);
   }, [addCommand, setFeedback, setHelpVisible]);
 
   const runTextCommand = useCallback(
